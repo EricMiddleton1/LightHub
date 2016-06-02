@@ -46,15 +46,15 @@ private:
 
 	void threadRoutine();
 
-	void cbStatusTimer(const boost::system::error_code& error);
+	void cbInfoTimer(const boost::system::error_code& error);
 	void cbWatchdogTimer(const boost::system::error_code& error);
 
-	void cbStatus(const boost::system::error_code& error,
+	void cbInfo(const boost::system::error_code& error,
 		size_t bytesTransferred);
 	void cbSendUpdate(const boost::system::error_code& error,
 		size_t bytesTransferred);
 
-	void sendStatusRequest();
+	void sendInfoRequest();
 
 	void changeState(State_e newState);
 
@@ -67,10 +67,10 @@ private:
 	boost::asio::ip::udp::endpoint udpEndpoint;
 	boost::asio::ip::udp::socket udpSocket;
 
-	boost::asio::deadline_timer statusTimer;
+	boost::asio::deadline_timer infoTimer;
 	boost::asio::deadline_timer watchdogTimer;
 
-	int statusRetryCount;
+	int infoRetryCount;
 
 	std::function<void(State_e, State_e)> cbStateChange;
 

@@ -6,7 +6,7 @@ LightNode::LightNode(const std::string& name,
 	const std::function<void(State_e, State_e)>& cbStateChange)
 		:	udpEndpoint(addr, port)
 		,	udpSocket(ioService)
-		,	statusTimer(ioService)
+		,	infoTimer(ioService)
 		,	watchdogTimer(ioService) {
 
 
@@ -18,12 +18,12 @@ LightNode::LightNode(const std::string& name,
 	this->name = name;
 	this->cbStateChange = cbStateChange;
 
-	statusRetryCount = 0;
+	infoRetryCount = 0;
 
 	state = CONNECTING;
 
 	//Send status request
-	sendStatusRequest();
+	sendInfoRequest();
 
 	//Set watchdog timer
 	//watchdogTimer.expires_from_now(
@@ -53,43 +53,43 @@ void LightNode::threadRoutine() {
 	std::cout << "[LightNode] threadRoutine finished." << std::endl;
 }
 
-void LightNode::sendStatusRequest() {
+void LightNode::sendInfoRequest() {
 	//Send status request packet
 	udpSocket.async_send_to(boost::asio::buffer(Packet::Init().asDatagram()),
 		udpEndpoint,
 		[this](const boost::system::error_code& error, size_t bytesTransferred) {
-			cbStatus(error, bytesTransferred);
+			cbInfo(error, bytesTransferred);
 		});
 
 	//Set status request timeout timer
-	statusTimer.expires_from_now(
+	infoTimer.expires_from_now(
 		boost::posix_time::milliseconds(PACKET_TIMEOUT));
 
 	//Start timeout timer
-	statusTimer.async_wait([this](const boost::system::error_code& error) {
-		cbStatusTimer(error);
+	infoTimer.async_wait([this](const boost::system::error_code& error) {
+		cbInfoTimer(error);
 	});
 }
 
-void LightNode::cbStatusTimer(const boost::system::error_code& error) {
+void LightNode::cbInfoTimer(const boost::system::error_code& error) {
 	if(error.value() == boost::system::errc::operation_canceled) {
 		//We manually cancelled the timer
 		return;
 	}
 
-	if(statusRetryCount >= PACKET_RETRY_COUNT) {
+	if(infoRetryCount >= PACKET_RETRY_COUNT) {
 		//We've already made enough attemps, we're disconnected
 		changeState(DISCONNECTED);
 
 		return;
 	}
 
-	std::cout << "[LightNode::cbStatusTimer] Retrying status request"
+	std::cout << "[LightNode::cbInfoTimer] Retrying info request"
 		<< std::endl;
 
-	statusRetryCount++;
+	infoRetryCount++;
 
-	sendStatusRequest();
+	sendInfoRequest();
 }
 
 void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
@@ -102,7 +102,7 @@ void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
 	changeState(DISCONNECTED);
 }
 
-void LightNode::cbStatus(const boost::system::error_code& error,
+void LightNode::cbInfo(const boost::system::error_code& error,
 	size_t bytesTransferred) {
 
 	//TODO: deal with errors
@@ -125,7 +125,7 @@ void LightNode::changeState(State_e newState) {
 
 	//If DISCONNECTED->CONNECTING, request status from node
 	if(oldState == DISCONNECTED && newState == CONNECTING)
-		sendStatusRequest();
+		sendInfoRequest();
 
 	//If now CONNECTED, start watchdog timer
 	if(newState == CONNECTED)
@@ -162,7 +162,7 @@ void LightNode::receivePacket(Packet& p) {
 				strip = LightStrip(pixelCount);
 
 			//Cancel the timeout timer
-			statusTimer.cancel();
+			infoTimer.cancel();
 
 			changeState(CONNECTED);
 		}
