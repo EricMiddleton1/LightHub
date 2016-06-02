@@ -2,8 +2,12 @@
 #define PACKET_HPP
 
 #include <cstdint> //for int typedefs
-#include <array> //for std::array
 #include <vector> //for std::vector
+
+#include "Color.hpp"
+#include "Exception.hpp"
+#include "ErrorCode.hpp"
+
 
 class Packet
 {
@@ -22,24 +26,30 @@ public:
 
 	Packet();
 
-	Packet(ID_e id, const std::vector& payload);
+	Packet(ID_e id, const std::vector<uint8_t>& payload);
 	
-	Packet(const std::array<uint8_t>& datagram);
+	Packet(const std::vector<uint8_t>& datagram);
 
 
 	std::vector<uint8_t>& getPayload();
-	void setPayload(const std::vector<uint8_t>& payload)
+	void setPayload(const std::vector<uint8_t>& payload);
 
 	ID_e getID();
 	void setID(ID_e id);
 
+	std::vector<uint8_t> asDatagram();
 	
 	static Packet Ping();
 	static Packet Init();
 	static Packet Info(uint16_t pixelCount);
-	static Packet Update(const std::vector<
+	static Packet Update(const std::vector<Color>& colors);
+	static Packet Alive();
+	static Packet Ack();
+	static Packet Nack();
 
 private:
+	const static uint16_t HEADER_VALUE = 0xAA55;
+
 	ID_e id;
 	std::vector<uint8_t> payload;
 
