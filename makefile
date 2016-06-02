@@ -28,3 +28,6 @@ $(objdir)/LightNode.o: $(srcdir)/LightNode.hpp $(srcdir)/LightNode.cpp
 
 $(objdir)/main.o: $(srcdir)/main.hpp $(srcdir)/main.cpp
 	$(CC) $(CFLAGS) -c $(srcdir)/main.cpp -o $(objdir)/main.o
+
+clean:
+	rm $(objdir)/*.o
