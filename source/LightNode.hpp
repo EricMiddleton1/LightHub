@@ -29,16 +29,20 @@ public:
 	
 	~LightNode();
 
+	State_e getState() const;
+
 	void receivePacket(Packet& p);
 
 	LightStrip& getLightStrip();
 
 	bool sendUpdate();
 
+	static std::string stateToString(State_e state);
+
 private:
 	static const int PACKET_TIMEOUT = 1000;
 	static const int WATCHDOG_TIMEOUT = 10000;
-	static const int PACKET_RETRY_COUNT = 20;
+	static const int PACKET_RETRY_COUNT = 3;
 
 	void threadRoutine();
 

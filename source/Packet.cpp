@@ -52,7 +52,7 @@ void Packet::setPayload(const std::vector<uint8_t>& payload) {
 	this->payload = payload;
 }
 
-Packet::ID_e Packet::getID() {
+Packet::ID_e Packet::getID() const {
 	return id;
 }
 

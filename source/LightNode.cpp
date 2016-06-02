@@ -149,6 +149,10 @@ void LightNode::feedWatchdog() {
 
 }
 
+LightNode::State_e LightNode::getState() const {
+	return state;
+}
+
 void LightNode::receivePacket(Packet& p) {
 	switch(p.getID()) {
 		case Packet::INFO: {
@@ -197,4 +201,28 @@ bool LightNode::sendUpdate() {
 		});
 
 	return true;
+}
+
+std::string LightNode::stateToString(State_e state) {
+	std::string str;
+
+	switch(state) {
+		case DISCONNECTED:
+			str = "disconnected";
+		break;
+
+		case CONNECTING:
+			str = "connecting";
+		break;
+
+		case CONNECTED:
+			str = "connected";
+		break;
+
+		default:
+			str = "unknown";
+		break;
+	}
+
+	return str;
 }
