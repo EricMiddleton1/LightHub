@@ -8,8 +8,11 @@ objdir=obj
 
 all: LightHub
 
-LightHub: $(objdir)/Exception.o $(objdir)/Color.o $(objdir)/LightStrip.o $(objdir)/Packet.o $(objdir)/LightNode.o $(objdir)/main.o
-	$(LD) $(CFLAGS) $(objdir)/Exception.o $(objdir)/Color.o $(objdir)/LightStrip.o $(objdir)/Packet.o $(objdir)/LightNode.o $(objdir)/main.o -lboost_system -lpthread -o LightHub
+LightHub: $(objdir)/Exception.o $(objdir)/Color.o $(objdir)/LightStrip.o \
+	$(objdir)/Packet.o $(objdir)/LightNode.o $(objdir)/main.o
+	$(LD) $(CFLAGS) $(objdir)/Exception.o $(objdir)/Color.o \
+		$(objdir)/LightStrip.o $(objdir)/Packet.o $(objdir)/LightNode.o \
+		$(objdir)/main.o -lboost_system -lpthread -o LightHub
 
 $(objdir)/Exception.o: $(srcdir)/Exception.hpp $(srcdir)/Exception.cpp
 	$(CC) $(CFLAGS) -c $(srcdir)/Exception.cpp -o $(objdir)/Exception.o

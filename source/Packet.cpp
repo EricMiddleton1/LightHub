@@ -11,14 +11,14 @@ Packet::Packet(ID_e id, const std::vector<uint8_t>& payload) {
 
 Packet::Packet(const std::vector<uint8_t>& datagram) {
 	if(datagram.size() < 3) {
-		throw Exception(ErrorCode::PACKET_INVALID_SIZE,
+		throw Exception(PACKET_INVALID_SIZE,
 			"[Packet::Packet]Error: Packet size < 3");
 	}
 
 	uint16_t header = datagram[0] << 8 | datagram[1];
 
 	if(header != HEADER_VALUE) {
-		throw Exception(ErrorCode::PACKET_INVALID_HEADER,
+		throw Exception(PACKET_INVALID_HEADER,
 			"[Packet::Packet]Error: Header value incorrect");
 	}
 
@@ -26,7 +26,7 @@ Packet::Packet(const std::vector<uint8_t>& datagram) {
 
 	if(id == INFO) {
 		if(datagram.size() != 5) {
-			throw Exception(ErrorCode::PACKET_INVALID_SIZE,
+			throw Exception(PACKET_INVALID_SIZE,
 				"[Packet::Packet]Error: Packet size != 5 for type INFO");
 		}
 		payload = std::vector<uint8_t>(datagram.begin() + 3,
@@ -34,7 +34,7 @@ Packet::Packet(const std::vector<uint8_t>& datagram) {
 	}
 	else if(id == UPDATE) {
 		if( ((datagram.size() - 3) % 3) != 0) { //check if divisible by 3
-			throw Exception(ErrorCode::PACKET_INVALID_SIZE,
+			throw Exception(PACKET_INVALID_SIZE,
 				"[Packet::Packet]Error: Payload size not divisible by"
 				"3 for type UPDATE");
 		}

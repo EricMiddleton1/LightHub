@@ -6,12 +6,13 @@
 
 #include "Color.hpp"
 #include "Exception.hpp"
-#include "ErrorCode.hpp"
-
 
 class Packet
 {
 public:
+	static const int PACKET_INVALID_HEADER = 0x0001;
+	static const int PACKET_INVALID_SIZE = 0x0002;
+
 	enum ID_e {
 		PING = 0x00,
 		INIT = 0x01,

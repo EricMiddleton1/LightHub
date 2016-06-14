@@ -5,11 +5,11 @@
 
 #include "Color.hpp"
 #include "Exception.hpp"
-#include "ErrorCode.hpp"
 
 class LightStrip
 {
 public:
+	static const int LIGHTSTRIP_INVALID_INDEX = 0x0010;
 	LightStrip();
 	LightStrip(int size);
 	

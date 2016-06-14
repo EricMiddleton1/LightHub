@@ -11,7 +11,7 @@ LightStrip::LightStrip(int size) {
 
 Color LightStrip::getPixel(int i) {
 	if(i < 0 || i >= (int)pixels.size()) {
-		throw Exception(ErrorCode::LIGHTSTRIP_INVALID_INDEX,
+		throw Exception(LIGHTSTRIP_INVALID_INDEX,
 			"[LightStrip::getPixel]Error: invalid index");
 	}
 
@@ -20,7 +20,7 @@ Color LightStrip::getPixel(int i) {
 
 void LightStrip::setPixel(int i, const Color& c) {
 	if(i < 0 || i >= (int)pixels.size()) {
-		throw Exception(ErrorCode::LIGHTSTRIP_INVALID_INDEX,
+		throw Exception(LIGHTSTRIP_INVALID_INDEX,
 			"[LightStrip::setPixel]Error: invalid index");
 	}
 
