@@ -29,6 +29,9 @@ public:
 	
 	~LightNode();
 
+	void connect();
+	void disconnect();
+
 	State_e getState() const;
 
 	void receivePacket(Packet& p);
@@ -50,7 +53,7 @@ private:
 	void cbWatchdogTimer(const boost::system::error_code& error);
 
 	void cbInfo(const boost::system::error_code& error,
-		size_t bytesTransferred);
+		size_t bytesTransferred);`
 	void cbSendUpdate(const boost::system::error_code& error,
 		size_t bytesTransferred);
 
@@ -75,7 +78,7 @@ private:
 	std::function<void(State_e, State_e)> cbStateChange;
 
 	std::unique_ptr<boost::asio::io_service::work> workPtr;
-	std::unique_ptr<std::thread> asyncThread;
+	std::thread asyncThread;
 
 	State_e state;
 };

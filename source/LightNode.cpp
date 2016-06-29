@@ -25,18 +25,8 @@ LightNode::LightNode(const std::string& name,
 	//Send status request
 	sendInfoRequest();
 
-	//Set watchdog timer
-	//watchdogTimer.expires_from_now(
-		//boost::posix_time::milliseconds(WATCHDOG_TIMEOUT));
-
-	//Start watchdog timer
-	//watchdogTimer.async_wait([this](const boost::system::error_code& error) {
-		///cbWatchdogTimer(error);
-	//});
-
 	//Launch async thread
-	asyncThread.reset(new std::thread(std::bind(&LightNode::threadRoutine,
-		this)));
+	asyncThread = std::thread(std::bind(&LightNode::threadRoutine, this));
 }
 
 LightNode::~LightNode() {
@@ -44,13 +34,13 @@ LightNode::~LightNode() {
 	workPtr.reset();
 
 	//Wait for the async thread to finish
-	asyncThread->join();
+	asyncThread.join();
 }
 
 void LightNode::threadRoutine() {
 	ioService.run();
 
-	std::cout << "[LightNode] threadRoutine finished." << std::endl;
+	std::cout << "[Info] threadRoutine finished." << std::endl;
 }
 
 void LightNode::sendInfoRequest() {
@@ -84,7 +74,7 @@ void LightNode::cbInfoTimer(const boost::system::error_code& error) {
 		return;
 	}
 
-	std::cout << "[LightNode::cbInfoTimer] Retrying info request"
+	std::cout << "[Info] Retrying info request"
 		<< std::endl;
 
 	infoRetryCount++;
@@ -147,6 +137,15 @@ void LightNode::feedWatchdog() {
 		cbWatchdogTimer(error);
 	});
 
+}
+
+void LightNode::connect() {
+	if(state == DISCONNECTED)
+		changeState(CONNECTING);
+}
+
+void LightNode::disconnect() {
+	changeState(DISCONNECTED);
 }
 
 LightNode::State_e LightNode::getState() const {

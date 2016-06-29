@@ -7,12 +7,12 @@ int main() {
 	LightNode testNode("TestNode",
 		boost::asio::ip::address::from_string(IP_ADDR),
 		PORT, [](LightNode::State_e oldState, LightNode::State_e newState) {
-			std::cout << "State changed from " <<
+			std::cout << "[Info] State changed from " <<
 				LightNode::stateToString(oldState) << " to " <<
 				LightNode::stateToString(newState) << std::endl;
 		});
 
-	std::cout << "testNode state: " <<
+	std::cout << "[Info] testNode state: " <<
 		LightNode::stateToString(testNode.getState()) << std::endl;
 
 	for(;;) {
