@@ -3,7 +3,7 @@
 
 LightNode::LightNode(const std::string& name,
 	const boost::asio::ip::address& addr, uint16_t sendPort,
-	const std::function<void(State_e, State_e)>& cbStateChange)
+	const std::function<void(LightNode*, State_e, State_e)>& cbStateChange)
 		:	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
 		,	infoTimer(ioService)
@@ -21,6 +21,15 @@ LightNode::LightNode(const std::string& name,
 	infoRetryCount = 0;
 
 	state = CONNECTING;
+
+	//Open the socket
+	try {
+		udpSocket.open(boost::asio::ip::udp::v4());
+	}
+	catch(const std::exception& e) {
+		std::cout << "LightNode::LightNode: Exception caught on socket open: "
+			<< e.what() << std::endl;
+	}
 
 	//Send status request
 	sendInfoRequest();
@@ -96,12 +105,22 @@ void LightNode::cbInfo(const boost::system::error_code& error,
 	size_t bytesTransferred) {
 
 	//TODO: deal with errors
+
+	if(error) {
+		std::cout << "[Error] LightNode::cbInfo: " << error.message()
+			<< std::endl;
+	}
 }
 
 void LightNode::cbSendUpdate(const boost::system::error_code& error,
 	size_t bytesTransferred) {
 
 	//TODO: deal with errors
+
+	if(error) {
+		std::cout << "[Error] LightNode::cbSendUpdate: " << error.message()
+			<< std::endl;
+	}
 }
 
 void LightNode::changeState(State_e newState) {
@@ -118,11 +137,15 @@ void LightNode::changeState(State_e newState) {
 		sendInfoRequest();
 
 	//If now CONNECTED, start watchdog timer
-	if(newState == CONNECTED)
+	if(newState == CONNECTED) {
 		feedWatchdog();
 
+		//Send a blank update
+		sendUpdate();
+	}
+
 	//notify the callback
-	cbStateChange(oldState, newState);
+	cbStateChange(this, oldState, newState);
 }
 
 void LightNode::feedWatchdog() {
@@ -161,12 +184,15 @@ boost::asio::ip::address LightNode::getAddress() const {
 }
 
 void LightNode::receivePacket(Packet& p) {
+//	std::cout << "[Info] LightNode::receivePacket: Packet received with ID "
+//		<< p.getID() << std::endl;
+
 	switch(p.getID()) {
 		case Packet::INFO: {
 			int pixelCount = (p.getPayload()[0] << 8) | p.getPayload()[1];
 
-			if(pixelCount != strip.getSize())
-				strip = LightStrip(pixelCount);
+			if(!strip || pixelCount != strip->getSize())
+				strip = std::make_shared<LightStrip>(pixelCount);
 
 			//Cancel the timeout timer
 			infoTimer.cancel();
@@ -191,7 +217,7 @@ void LightNode::receivePacket(Packet& p) {
 	}
 }
 
-LightStrip& LightNode::getLightStrip() {
+std::shared_ptr<LightStrip> LightNode::getLightStrip() {
 	return strip;
 }
 
@@ -199,7 +225,7 @@ bool LightNode::sendUpdate() {
 	if(state != CONNECTED)
 		return false;
 	
-	auto datagram = Packet::Update(strip.getPixels()).asDatagram();
+	auto datagram = Packet::Update(strip->getPixels()).asDatagram();
 
 	udpSocket.async_send_to(boost::asio::buffer(datagram), udpEndpoint,
 		[this](const boost::system::error_code& error,

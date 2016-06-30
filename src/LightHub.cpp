@@ -51,6 +51,9 @@ void LightHub::scan(LightHub::ScanMethod_e method) {
 			boost::asio::ip::udp::endpoint endpoint(
 				boost::asio::ip::address_v4::broadcast(), sendPort);
 
+//			std::cout << "[Info] Sending broadcast packet to "
+//				<< endpoint << std::endl;
+
 			//Send ping broadcast packet
 			sendSocket.async_send_to(boost::asio::buffer(
 				Packet::Ping().asDatagram()),	//Construct ping packet
@@ -80,11 +83,33 @@ std::shared_ptr<LightNode> LightHub::getNodeByName(const std::string& name) {
 	}
 }
 
-void LightHub::cbNodeStateChange(LightNode::State_e oldState,
-	LightNode::State_e newState) {
-	std::cout << "Node changed state from "
-		<< LightNode::stateToString(oldState) << " to "
-		<< LightNode::stateToString(newState) << std::endl;
+void LightHub::cbNodeStateChange(LightNode* node,
+	LightNode::State_e oldState, LightNode::State_e newState) {
+	
+	if(newState == LightNode::CONNECTED) {
+		std::cout << "[Info] Node '" << node->getName() << "' has connected "
+			"with " << node->getLightStrip()->getSize() << " LEDs" << std::endl;
+
+		//Find the shared_ptr that stores this node
+		auto sharedNode = std::find_if(std::begin(nodes), std::end(nodes),
+			[&node](const std::shared_ptr<LightNode>& listNode) {
+				return listNode.get() == node;
+			});
+
+		if(sharedNode == std::end(nodes)) {
+			std::cout << "[Error] LightHub::cbNodeStateChange: Node not in array"
+				<< std::endl;
+		}
+		else {
+			//Notify the external callback
+			extCbNodeDiscover(*sharedNode);
+		}
+	}
+	else if(oldState == LightNode::CONNECTED &&
+		newState == LightNode::DISCONNECTED) {
+		std::cout << "[Info] Node '" << node->getName() << "' has disconnected"
+			<< std::endl;
+	}
 }
 
 void LightHub::onNodeDiscover(std::function<void(std::shared_ptr<LightNode>)>
@@ -125,9 +150,10 @@ void LightHub::startListening() {
 		boost::bind(&LightHub::handleReceive, this,
 			boost::asio::placeholders::error,
 			boost::asio::placeholders::bytes_transferred));
-
+/*
 	std::cout << "[Info] LightHub: Now listening on "
 		<< sendSocket.local_endpoint().address() << std::endl;
+*/
 }
 
 void LightHub::handleReceive(const boost::system::error_code& ec,
@@ -176,19 +202,22 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 						std::placeholders::_2));*/
 
 				//TODO: Give the new node a unique name
-				//TODO: Have the node send it's set name along with other parameters
-				auto newNode = std::make_shared<LightNode>("",
+				//TODO: Have the node send its set name along with other parameters
+				std::string name = receiveEndpoint.address().to_string();
+				
+				auto newNode = std::make_shared<LightNode>(name,
 					receiveEndpoint.address(), sendPort,
 					std::bind(&LightHub::cbNodeStateChange, this, std::placeholders::_1,
-						std::placeholders::_2));
+						std::placeholders::_2, std::placeholders::_3));
 
 				//Store the new node
 				nodes.push_back(newNode);
-
+/*
 				if(extCbNodeDiscover) {
 					//Call the external callback
 					extCbNodeDiscover(newNode);
 				}
+*/
 			}
 			else {
 				//Some other error occurred
@@ -197,4 +226,6 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 			}
 		}
 	}
+
+	startListening();
 }

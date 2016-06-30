@@ -48,7 +48,7 @@ private:
 		size_t bytesTransferred);
 
 	//Callback for node state chance
-	void cbNodeStateChange(LightNode::State_e, LightNode::State_e);
+	void cbNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
 
 	//External callbacks
 	std::function<void(std::shared_ptr<LightNode>)> extCbNodeDiscover;

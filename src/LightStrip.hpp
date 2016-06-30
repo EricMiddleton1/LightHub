@@ -14,6 +14,7 @@ public:
 	
 	Color getPixel(int i);
 	void setPixel(int i, const Color& c);
+	void setAll(const Color& c);
 
 	std::vector<Color>& getPixels();
 

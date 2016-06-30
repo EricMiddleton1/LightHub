@@ -24,7 +24,7 @@ public:
 
 	LightNode(const std::string& name,
 		const boost::asio::ip::address& addr, uint16_t sendPort,
-		const std::function<void(State_e, State_e)>& cbStateChange);
+		const std::function<void(LightNode*, State_e, State_e)>& cbStateChange);
 	
 	~LightNode();
 
@@ -39,7 +39,7 @@ public:
 
 	void receivePacket(Packet& p);
 
-	LightStrip& getLightStrip();
+	std::shared_ptr<LightStrip> getLightStrip();
 
 	bool sendUpdate();
 
@@ -67,7 +67,7 @@ private:
 	void feedWatchdog();
 
 	std::string name;
-	LightStrip strip;
+	std::shared_ptr<LightStrip> strip;
 
 	//Network stuff
 	boost::asio::io_service ioService;
@@ -80,7 +80,7 @@ private:
 
 	int infoRetryCount;
 
-	std::function<void(State_e, State_e)> cbStateChange;
+	std::function<void(LightNode*, State_e, State_e)> cbStateChange;
 
 	//Thread stuff
 	std::unique_ptr<boost::asio::io_service::work> workPtr;

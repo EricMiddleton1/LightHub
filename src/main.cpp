@@ -21,13 +21,17 @@ int main() {
 	LightHub lightHub(HUB_TO_NODE_PORT, NODE_TO_HUB_PORT);
 
 	lightHub.onNodeDiscover([](std::shared_ptr<LightNode> node) {
-		std::cout << "New node connected: " << node->getName()
-			<< " at address " << node->getAddress() << std::endl;
+		//For debugging purposes, set all LEDs to white and update
+		node->getLightStrip()->setAll(Color(255, 255, 255));
+		node->sendUpdate();
+
 	});
+
+	lightHub.scan(LightHub::SCAN_BROADCAST);
 
 	for(;;) {
 		//Do a broadcast scan for nodes
-		std::cout << "[Info] Scanning for new nodes" << std::endl;
+//		std::cout << "[Info] Scanning for new nodes" << std::endl;
 		lightHub.scan(LightHub::SCAN_BROADCAST);
 
 		//Delay 1 second
