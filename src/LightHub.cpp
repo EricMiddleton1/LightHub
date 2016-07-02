@@ -135,6 +135,28 @@ std::shared_ptr<LightNode> LightHub::getNodeByAddress(
 	}
 }
 
+std::vector<std::shared_ptr<LightNode>>::iterator LightHub::begin() {
+	return nodes.begin();
+}
+
+std::vector<std::shared_ptr<LightNode>>::iterator LightHub::end() {
+	return nodes.end();
+}
+
+size_t LightHub::getNodeCount() const {
+	return nodes.size();
+}
+
+size_t LightHub::getConnectedNodeCount() const {
+	size_t connectedCount = 0;
+
+	for(auto& node : nodes) {
+		connectedCount += node->isConnected() == LightNode::CONNECTED;
+	}
+
+	return connectedCount;
+}
+
 void LightHub::handleSendBroadcast(const boost::system::error_code& ec,
 	size_t bytesTransferred) {
 	if(ec) {

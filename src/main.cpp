@@ -21,10 +21,14 @@ int main() {
 	LightHub lightHub(HUB_TO_NODE_PORT, NODE_TO_HUB_PORT);
 
 	lightHub.onNodeDiscover([](std::shared_ptr<LightNode> node) {
-		//For debugging purposes, set all LEDs to white and update
-		node->getLightStrip()->setAll(Color(255, 255, 255));
-		node->sendUpdate();
+		auto strip = node->getLightStrip();
 
+		for(int i = 0; i < strip->getSize(); i++) {
+			strip->setPixel(i, Color::HSV(i%360, 1, 1));
+			node->sendUpdate();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
 	});
 
 	lightHub.scan(LightHub::SCAN_BROADCAST);

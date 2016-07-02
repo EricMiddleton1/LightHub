@@ -33,6 +33,13 @@ public:
 
 	std::shared_ptr<LightNode> getNodeByAddress(const boost::asio::ip::address&);
 
+	std::vector<std::shared_ptr<LightNode>>::iterator begin();
+	std::vector<std::shared_ptr<LightNode>>::iterator end();
+
+	size_t getNodeCount() const;
+
+	size_t getConnectedNodeCount() const;
+
 private:
 	//Thread to run io_service.run()
 	void threadRoutine();
