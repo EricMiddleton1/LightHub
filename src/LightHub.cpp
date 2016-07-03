@@ -151,7 +151,7 @@ size_t LightHub::getConnectedNodeCount() const {
 	size_t connectedCount = 0;
 
 	for(auto& node : nodes) {
-		connectedCount += node->isConnected() == LightNode::CONNECTED;
+		connectedCount += node->getState() == LightNode::CONNECTED;
 	}
 
 	return connectedCount;
