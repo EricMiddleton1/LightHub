@@ -14,20 +14,20 @@
 class LightHub
 {
 public:
-	enum ScanMethod_e {
-		SCAN_SWEEP,
-		SCAN_BROADCAST
+	enum DiscoveryMethod_e {
+		SWEEP,
+		BROADCAST
 	};
 
 	//Exception codes
 	static const uint16_t LIGHT_HUB_NODE_NOT_FOUND = 1;
 
-	LightHub(uint16_t sendPort, uint16_t recvPort);
+	LightHub(uint16_t sendPort, uint16_t recvPort, DiscoveryMethod_e, uint32_t discoverPeriod = 1000);
 	~LightHub();
 
 	void onNodeDiscover(std::function<void(std::shared_ptr<LightNode>)>);
 
-	void scan(ScanMethod_e);
+	void discover(DiscoveryMethod_e);
 
 	std::shared_ptr<LightNode> getNodeByName(const std::string&);
 
@@ -54,6 +54,9 @@ private:
 	void handleReceive(const boost::system::error_code&,
 		size_t bytesTransferred);
 
+	//Callback for discovery timer
+	void handleDiscoveryTimer(const boost::system::error_code&);
+
 	//Callback for node state chance
 	void cbNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
 
@@ -74,6 +77,11 @@ private:
 	boost::asio::ip::udp::endpoint receiveEndpoint;
 	uint16_t sendPort, recvPort;
 	std::array<uint8_t, 512> readBuffer;
+
+	//Autodiscovery stuff
+	boost::asio::deadline_timer discoveryTimer;
+	DiscoveryMethod_e discoveryMethod;
+	uint32_t discoveryPeriod;
 
 
 };

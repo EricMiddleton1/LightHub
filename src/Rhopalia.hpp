@@ -10,6 +10,9 @@
 class Rhopalia
 {
 public:
+	Rhopalia();
+	~Rhopalia();
+
 
 
 
