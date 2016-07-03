@@ -20,7 +20,8 @@ public:
 
 	virtual void forceUpdate() = 0;
 
-private:
-	std::vector<std::shared_ptr<LightNode>> nodes;
 
+
+protected:
+	std::vector<std::shared_ptr<LightNode>> nodes;
 };
