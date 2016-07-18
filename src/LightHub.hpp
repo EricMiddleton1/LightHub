@@ -19,13 +19,28 @@ public:
 		BROADCAST
 	};
 
+	enum ListenerType_e {
+		NODE_DISCOVER
+	};
+
 	//Exception codes
 	static const uint16_t LIGHT_HUB_NODE_NOT_FOUND = 1;
 
-	LightHub(uint16_t sendPort, uint16_t recvPort, DiscoveryMethod_e, uint32_t discoverPeriod = 1000);
+	LightHub(uint16_t sendPort, uint16_t recvPort, DiscoveryMethod_e,
+		uint32_t discoverPeriod = 1000);
 	~LightHub();
 
-	void onNodeDiscover(std::function<void(std::shared_ptr<LightNode>)>);
+	template<class T>
+	void addListener(ListenerType_e listenType, T slot) {
+		if(listenType == NODE_DISCOVER) {
+			sigNodeDiscover.connect(slot);
+		}
+		else {
+			//This shouldn't happen
+			std::cout << "[Error] LightNode::addListener: Invalid listener type"
+				<< std::endl;
+		}
+	}
 
 	void discover(DiscoveryMethod_e);
 
@@ -57,11 +72,8 @@ private:
 	//Callback for discovery timer
 	void handleDiscoveryTimer(const boost::system::error_code&);
 
-	//Callback for node state chance
-	void cbNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
-
-	//External callbacks
-	std::function<void(std::shared_ptr<LightNode>)> extCbNodeDiscover;
+	//Signals
+	boost::signals2::signal<void(std::shared_ptr<LightNode>)> sigNodeDiscover;
 
 	//Vector of nodes
 	//That have at one point responded

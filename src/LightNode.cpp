@@ -2,13 +2,11 @@
 
 
 LightNode::LightNode(const std::string& name,
-	const boost::asio::ip::address& addr, uint16_t sendPort,
-	const std::function<void(LightNode*, State_e, State_e)>& cbStateChange)
+	const boost::asio::ip::address& addr, uint16_t sendPort)
 		:	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
 		,	infoTimer(ioService)
 		,	watchdogTimer(ioService) {
-
 
 	ioService.reset();
 
@@ -16,7 +14,6 @@ LightNode::LightNode(const std::string& name,
 	workPtr.reset(new boost::asio::io_service::work(ioService));
 
 	this->name = name;
-	this->cbStateChange = cbStateChange;
 
 	infoRetryCount = 0;
 
@@ -44,6 +41,20 @@ LightNode::~LightNode() {
 
 	//Wait for the async thread to finish
 	asyncThread.join();
+}
+
+void LightNode::addListener(ListenerType_e listenType,
+	std::function<void(LightNode*, State_e, State_e)> slot) {
+
+	//This is currently the only signal type
+	if(listenType == STATE_CHANGE) {
+		sigStateChange.connect(slot);
+	}
+	else {
+		//This shouldn't happen
+		std::cout << "[Error] LightNode::addListener: Invalid listener type"
+			<< std::endl;
+	}
 }
 
 void LightNode::threadRoutine() {
@@ -145,7 +156,7 @@ void LightNode::changeState(State_e newState) {
 	}
 
 	//notify the callback
-	cbStateChange(this, oldState, newState);
+	sigStateChange(this, oldState, newState);
 }
 
 void LightNode::feedWatchdog() {

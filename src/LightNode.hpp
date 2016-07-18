@@ -8,6 +8,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/signals2.hpp>
 
 #include "LightStrip.hpp"
 #include "Packet.hpp"
@@ -22,11 +23,17 @@ public:
 		CONNECTED
 	};
 
+	enum ListenerType_e {
+		STATE_CHANGE
+	};
+
 	LightNode(const std::string& name,
-		const boost::asio::ip::address& addr, uint16_t sendPort,
-		const std::function<void(LightNode*, State_e, State_e)>& cbStateChange);
+		const boost::asio::ip::address& addr, uint16_t sendPort);
 	
 	~LightNode();
+
+	void addListener(ListenerType_e,
+		std::function<void(LightNode*, State_e, State_e)>);
 
 	void connect();
 	void disconnect();
@@ -66,8 +73,12 @@ private:
 
 	void feedWatchdog();
 
+	//Remove strip information
 	std::string name;
 	std::shared_ptr<LightStrip> strip;
+
+	//Signals
+	boost::signals2::signal<void(LightNode*, State_e, State_e)> sigStateChange;
 
 	//Network stuff
 	boost::asio::io_service ioService;
@@ -79,8 +90,6 @@ private:
 	boost::asio::deadline_timer watchdogTimer;
 
 	int infoRetryCount;
-
-	std::function<void(LightNode*, State_e, State_e)> cbStateChange;
 
 	//Thread stuff
 	std::unique_ptr<boost::asio::io_service::work> workPtr;
