@@ -11,6 +11,9 @@ class ILightEffect
 public:
 	static const uint16_t EXCEPTION_LIGHT_EFFECT_NODE_NOT_FOUND = 0x0020;
 
+	ILightEffect();
+	virtual ~ILightEffect();
+
 	virtual void addNode(std::shared_ptr<LightNode>);
 	virtual void removeNode(std::shared_ptr<LightNode>);
 
