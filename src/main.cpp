@@ -8,6 +8,8 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
 
+void slotLightRefresh();
+
 int main() {
 	//LightHub lightHub(HUB_TO_NODE_PORT, NODE_TO_HUB_PORT, LightHub::BROADCAST);
 
@@ -15,7 +17,9 @@ int main() {
 
 	Rhopalia controller;
 
-	controller.addListener(Rhopalia::NODE_DISCOVER, &slotNodeDiscover);
+	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
+
+	controller.addListener(Rhopalia::REFRESH_TIMER, &slotLightRefresh);
 
 	for(;;) {
 		//Delay 1 second
@@ -38,4 +42,8 @@ void slotNodeStateChange(LightNode* node, LightNode::State_e prevState,
 	std::cout << "[Info] slotNodeStateChange: Node '" << node->getName()
 		<< "' state changed to " << LightNode::stateToString(newState)
 		<< std::endl;
+}
+
+void slotLightRefresh() {
+	std::cout << "[Info] slotLightRefresh" << std::endl;
 }
