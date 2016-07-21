@@ -9,3 +9,4 @@
 #include "LightHub.hpp"
 #include "LightNode.hpp"
 #include "LightEffectSolid.hpp"
+#include "LightEffectFade.hpp"

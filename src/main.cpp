@@ -8,16 +8,17 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
 
-std::shared_ptr<LightEffectSolid> effectSolid;
+std::shared_ptr<LightEffectFade> effectFade;
 
 int main() {
 	Rhopalia controller;
 
-	effectSolid = std::make_shared<LightEffectSolid>();
-
-	effectSolid->setColor(Color(0, 255, 0));
+	effectFade = std::make_shared<LightEffectFade>(1.f, 1.f);
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
+
+	//Add the effect to the controller
+	controller.addEffect(effectFade);
 
 	//Everything is handled by other threads now
 	for(;;) {
@@ -32,7 +33,7 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
 		<< node->getName() << "'" << std::endl;
 
-	effectSolid->addNode(node);
+	effectFade->addNode(node);
 
 	node->addListener(LightNode::STATE_CHANGE, &slotNodeStateChange);
 }

@@ -10,11 +10,11 @@ all: LightHub
 
 LightHub: $(objdir)/Exception.o $(objdir)/Color.o $(objdir)/LightStrip.o \
 	$(objdir)/Packet.o $(objdir)/LightNode.o $(objdir)/LightHub.o \
-	$(objdir)/ILightEffect.o $(objdir)/LightEffectSolid.o $(objdir)/Rhopalia.o \
+	$(objdir)/ILightEffect.o $(objdir)/LightEffectFade.o $(objdir)/Rhopalia.o \
 	$(objdir)/main.o
 	$(LD) $(CFLAGS) $(objdir)/Exception.o $(objdir)/Color.o \
 		$(objdir)/LightStrip.o $(objdir)/Packet.o $(objdir)/LightNode.o \
-		$(objdir)/LightHub.o $(objdir)/ILightEffect.o $(objdir)/LightEffectSolid.o\
+		$(objdir)/LightHub.o $(objdir)/ILightEffect.o $(objdir)/LightEffectFade.o\
 		$(objdir)/Rhopalia.o $(objdir)/main.o \
 		-lboost_system -lpthread -o LightHub
 
@@ -39,10 +39,10 @@ $(objdir)/LightHub.o: $(srcdir)/LightHub.hpp $(srcdir)/LightHub.cpp
 $(objdir)/ILightEffect.o: $(srcdir)/ILightEffect.hpp $(srcdir)/ILightEffect.cpp
 	$(CC) $(CFLAGS) -c $(srcdir)/ILightEffect.cpp -o $(objdir)/ILightEffect.o
 
-$(objdir)/LightEffectSolid.o: $(srcdir)/LightEffectSolid.hpp \
-	$(srcdir)/LightEffectSolid.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/LightEffectSolid.cpp -o \
-		$(objdir)/LightEffectSolid.o
+$(objdir)/LightEffectFade.o: $(srcdir)/LightEffectFade.hpp \
+	$(srcdir)/LightEffectFade.cpp
+	$(CC) $(CFLAGS) -c $(srcdir)/LightEffectFade.cpp -o \
+		$(objdir)/LightEffectFade.o
 
 $(objdir)/Rhopalia.o: $(srcdir)/Rhopalia.hpp $(srcdir)/Rhopalia.cpp
 	$(CC) $(CFLAGS) -c $(srcdir)/Rhopalia.cpp -o $(objdir)/Rhopalia.o
