@@ -10,7 +10,7 @@ Color::Color(int r, int g, int b) {
 	this->b = b;
 }
 
-Color Color::operator=(Color c) {
+Color Color::operator=(const Color& c) {
 	r = c.r;
 	g = c.g;
 	b = c.b;
@@ -18,19 +18,19 @@ Color Color::operator=(Color c) {
 	return *this;
 }
 
-bool Color::operator!=(Color rhs) {
+bool Color::operator!=(const Color& rhs) const {
 	bool res = (r != rhs.r) || (g != rhs.g) || (b != rhs.b);
 
 	return res;
 }
 
-bool Color::operator==(Color rhs) {
+bool Color::operator==(const Color& rhs) const {
 	bool res = (r == rhs.r) && (g == rhs.g) && (b == rhs.b);
 
 	return res;
 }
 
-std::string Color::toString() {
+std::string Color::toString() const {
 	return "(" + std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ")";
 }
 

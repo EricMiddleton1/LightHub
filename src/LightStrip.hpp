@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <mutex>
+#include <iostream> //For debugging
 
 #include "Color.hpp"
 #include "Exception.hpp"

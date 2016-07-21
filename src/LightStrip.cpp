@@ -28,16 +28,14 @@ void LightStrip::setPixel(int i, const Color& c) {
 }
 
 void LightStrip::setAll(const Color& c) {
-	std::for_each(std::begin(pixels), std::end(pixels),
-		[&c](Color& pixel) {
-			pixel = c;
-		});
+	for(auto& pixel : pixels) {
+		pixel = c;
+	}
+
+	std::cout << "[Info] LightStrip::setAll: Setting all pixels to "
+		<< c.toString() << std::endl;
 }
 
 std::vector<Color>& LightStrip::getPixels() {
 	return pixels;
-}
-
-int LightStrip::getSize() {
-	return pixels.size();
 }

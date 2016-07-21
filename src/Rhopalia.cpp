@@ -19,43 +19,39 @@ Rhopalia::~Rhopalia() {
 	asyncThread.join();
 }
 
+void Rhopalia::addEffect(const std::shared_ptr<ILightEffect>& effect) {
+	effects.push_back(effect);
+}
+
 void Rhopalia::threadRoutine() {
 	ioService.run();
 }
 
 void Rhopalia::startUpdateTimer() {
 	//Set the update timer
-	updateTimer.expires_from_now(boost::posix_time::milliseconds(UPDATE_PERIOD));
-	updateTimer.async_wait(std::bind(&Rhopalia::cbUpdateTimer, this, std::placeholders::_1));
+	updateTimer.expires_from_now(
+		boost::posix_time::milliseconds(UPDATE_PERIOD));
 
-/*	updateTimer.async_wait([this](const boost::system::error_code& ec) {
-		if(ec) {
-			//There was an error
-			std::cout << "[Error] Rhopalia::cbUpdateTimer: error with deadline_timer: "
-				<< ec.message() << std::endl;
-		}
-		else {
-			std::cout <<  "[Info] Rhopalia::cbUpdateTimer: Timer finished" << std::endl;
-			//Send the refresh signal
-			sigRefreshTimer();
-		}
-
-		//Reset the timer
-		startUpdateTimer();
-	});*/
+	updateTimer.async_wait(std::bind(&Rhopalia::cbUpdateTimer, this,
+		std::placeholders::_1));
 }
 
 void Rhopalia::cbUpdateTimer(const boost::system::error_code& ec) {
+	//Restart the timer
+	startUpdateTimer();
+
 	if(ec) {
 		//There was an error
-		std::cout << "[Error] Rhopalia::cbUpdateTimer: error with deadline_timer: "
-			<< ec.message() << std::endl;
+		std::cout << "[Error] Rhopalia::cbUpdateTimer: error with "
+			"deadline_timer: " << ec.message() << std::endl;
 	}
 	else {
-		//Send the refresh signal
-		sigRefreshTimer();
-	}
+		//Update the effects first
+		for(auto& effect : effects) {
+			effect->update();
+		}
 
-	//Reset the timer
-	startUpdateTimer();
+		//Then update the lights
+		hub.updateLights();
+	}
 }

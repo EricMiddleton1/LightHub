@@ -11,11 +11,11 @@ public:
 	Color();
 	Color(int r, int g, int b);
 
-	Color operator=(Color c);
-	bool operator!=(Color rhs);
-	bool operator==(Color rhs);
+	Color operator=(const Color& c);
+	bool operator!=(const Color& rhs) const;
+	bool operator==(const Color& rhs) const;
 
-	std::string toString();
+	std::string toString() const;
 
 	byte getRed() const;
 	byte getGreen() const;

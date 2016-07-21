@@ -238,3 +238,9 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 
 	startListening();
 }
+
+void LightHub::updateLights() {
+	for(auto& node : nodes) {
+		node->update();
+	}
+}

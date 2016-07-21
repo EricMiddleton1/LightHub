@@ -11,6 +11,9 @@
 #include "LightNode.hpp"
 
 
+//Forward declaration of friend class
+class Rhopalia;
+
 class LightHub
 {
 public:
@@ -56,6 +59,11 @@ public:
 	size_t getConnectedNodeCount() const;
 
 private:
+	friend class Rhopalia;
+
+	//Function to update all nodes in vector
+	void updateLights();
+
 	//Thread to run io_service.run()
 	void threadRoutine();
 

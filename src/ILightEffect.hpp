@@ -6,6 +6,10 @@
 #include "Exception.hpp"
 #include "LightNode.hpp"
 
+
+//Forward declaration
+class Rhopalia;
+
 class ILightEffect
 {
 public:
@@ -14,17 +18,18 @@ public:
 	ILightEffect();
 	virtual ~ILightEffect();
 
-	virtual void addNode(std::shared_ptr<LightNode>);
+	virtual void addNode(const std::shared_ptr<LightNode>&);
 	virtual void removeNode(std::shared_ptr<LightNode>);
 
 
 	virtual std::vector<std::shared_ptr<LightNode>>::iterator begin();
 	virtual std::vector<std::shared_ptr<LightNode>>::iterator end();
 
-	virtual void forceUpdate() = 0;
-
-
-
 protected:
+	friend Rhopalia;
+
+	//Slots
+	virtual void update() = 0;
+
 	std::vector<std::shared_ptr<LightNode>> nodes;
 };

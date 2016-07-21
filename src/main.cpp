@@ -8,19 +8,18 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
 
-void slotLightRefresh();
+std::shared_ptr<LightEffectSolid> effectSolid;
 
 int main() {
-	//LightHub lightHub(HUB_TO_NODE_PORT, NODE_TO_HUB_PORT, LightHub::BROADCAST);
-
-	//lightHub.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
-
 	Rhopalia controller;
+
+	effectSolid = std::make_shared<LightEffectSolid>();
+
+	effectSolid->setColor(Color(0, 255, 0));
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
 
-	controller.addListener(Rhopalia::REFRESH_TIMER, &slotLightRefresh);
-
+	//Everything is handled by other threads now
 	for(;;) {
 		//Delay 1 second
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -33,6 +32,8 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
 		<< node->getName() << "'" << std::endl;
 
+	effectSolid->addNode(node);
+
 	node->addListener(LightNode::STATE_CHANGE, &slotNodeStateChange);
 }
 
@@ -42,8 +43,4 @@ void slotNodeStateChange(LightNode* node, LightNode::State_e prevState,
 	std::cout << "[Info] slotNodeStateChange: Node '" << node->getName()
 		<< "' state changed to " << LightNode::stateToString(newState)
 		<< std::endl;
-}
-
-void slotLightRefresh() {
-	std::cout << "[Info] slotLightRefresh" << std::endl;
 }

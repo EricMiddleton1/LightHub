@@ -1,23 +1,22 @@
 #include "LightNode.hpp"
 
 
-LightNode::LightNode(const std::string& name,
+LightNode::LightNode(const std::string& _name,
 	const boost::asio::ip::address& addr, uint16_t sendPort)
-		:	udpEndpoint(addr, sendPort)
+		:	name(_name)
+		,	pixelCount{0}
+		,	isDirty{false}
+		,	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
 		,	infoTimer(ioService)
-		,	watchdogTimer(ioService) {
+		,	watchdogTimer(ioService) 
+		,	infoRetryCount{0}
+		,	state{CONNECTING} {
 
 	ioService.reset();
 
 	//Create work unit so ioService doesn't return until deconstructor
 	workPtr.reset(new boost::asio::io_service::work(ioService));
-
-	this->name = name;
-
-	infoRetryCount = 0;
-
-	state = CONNECTING;
 
 	//Open the socket
 	try {
@@ -36,6 +35,9 @@ LightNode::LightNode(const std::string& name,
 }
 
 LightNode::~LightNode() {
+	//Make sure nobody has a reference to the LightStrip
+	std::unique_lock<std::mutex> stripLock(stripMutex);
+
 	//Clear the io_service work unit
 	workPtr.reset();
 
@@ -151,8 +153,12 @@ void LightNode::changeState(State_e newState) {
 	if(newState == CONNECTED) {
 		feedWatchdog();
 
+		//Indicate that an update is needed
+		isDirty = true;
+
 		//Send a blank update
-		sendUpdate();
+		//sendUpdate();
+		//DON'T do this anymore, all updates done in sync
 	}
 
 	//notify the callback
@@ -200,10 +206,14 @@ void LightNode::receivePacket(Packet& p) {
 
 	switch(p.getID()) {
 		case Packet::INFO: {
-			int pixelCount = (p.getPayload()[0] << 8) | p.getPayload()[1];
+			int _pixelCount = (p.getPayload()[0] << 8) | p.getPayload()[1];
 
-			if(!strip || pixelCount != strip->getSize())
-				strip = std::make_shared<LightStrip>(pixelCount);
+			if(_pixelCount != pixelCount) {
+				std::unique_lock<std::mutex> stripLock(stripMutex);
+
+				pixelCount = _pixelCount;
+				strip = LightStrip(pixelCount);
+			}
 
 			//Cancel the timeout timer
 			infoTimer.cancel();
@@ -228,21 +238,49 @@ void LightNode::receivePacket(Packet& p) {
 	}
 }
 
-std::shared_ptr<LightStrip> LightNode::getLightStrip() {
+//TODO: Return a class that manages the mutex state in RAII-style
+LightStrip& LightNode::getLightStrip() {
+	//Lock the strip mutex
+	stripMutex.lock();
+
 	return strip;
 }
 
-bool LightNode::sendUpdate() {
-	if(state != CONNECTED)
+void LightNode::releaseLightStrip(bool _isDirty) {
+	stripMutex.unlock();
+
+	isDirty = _isDirty;
+
+	if(isDirty)
+		std::cout << "[Info] LightNode::releaseLightStrip: LightNode now dirty"
+			<< std::endl;
+}
+
+bool LightNode::update() {
+	//Make sure the node is connected AND needs to be updated
+	if(state != CONNECTED || !isDirty)
 		return false;
-	
-	auto datagram = Packet::Update(strip->getPixels()).asDatagram();
+
+	std::vector<uint8_t> datagram;
+
+	{
+		//Lock the strip mutex
+		std::unique_lock<std::mutex> stripLock(stripMutex);
+
+		datagram = Packet::Update(strip.getPixels()).asDatagram();
+	} //Mutex gets unlocked here
+
+	std::cout << "[Info] LightNode::update: Sending update to '" << name
+		<< "' with color " << strip.getPixels()[0].toString() << std::endl;
 
 	udpSocket.async_send_to(boost::asio::buffer(datagram), udpEndpoint,
 		[this](const boost::system::error_code& error,
 			size_t bytesTransferred) {
 				cbSendUpdate(error, bytesTransferred);
 		});
+
+	//Clear the dirty bit
+	isDirty = false;
 
 	return true;
 }

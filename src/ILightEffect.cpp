@@ -7,9 +7,9 @@ ILightEffect::ILightEffect() {
 ILightEffect::~ILightEffect() {
 }
 
-void ILightEffect::addNode(std::shared_ptr<LightNode> node) {
+void ILightEffect::addNode(const std::shared_ptr<LightNode>& node) {
 	//TODO: Make sure that the node isn't already in the vector
-
+	
 	nodes.push_back(node);
 }
 

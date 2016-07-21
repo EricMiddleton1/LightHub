@@ -15,30 +15,34 @@
 class Rhopalia
 {
 public:
-	enum ListenerType_e {
-		REFRESH_TIMER
-	};
-
 	Rhopalia();
 	~Rhopalia();
 
 	//Overload to add listener of internal Rhopalia events
+	//But y tho
+/*
 	template <class T>
 	void addListener(ListenerType_e listenType, T slot) {
-		if(listenType == REFRESH_TIMER) {
-			sigRefreshTimer.connect(slot);
+		if(listenType == EFFECT_UPDATE) {
+			sigEffectUpdate.connect(slot);
+		}
+		else if(listenType == LIGHT_UPDATE) {
+			sigLightUpdate.connect(slot);
 		}
 		else {
 			std::cout << "[Error] Rhopalia::addListener: Invalid listener type"
 				<< std::endl;
 		}
 	}
+*/
 
 	//Overload to add listener of external LightHub events
 	template <class T>
 	void addListener(LightHub::ListenerType_e listenType, T slot) {
 		hub.addListener(listenType, slot);
 	}
+
+	void addEffect(const std::shared_ptr<ILightEffect>&);
 
 
 private:
@@ -56,7 +60,7 @@ private:
 	void cbUpdateTimer(const boost::system::error_code&);
 
 	LightHub hub;
-	std::vector<ILightEffect> lightEffects;
+	std::vector<std::shared_ptr<ILightEffect>> effects;
 
 	boost::asio::io_service ioService;
 	std::unique_ptr<boost::asio::io_service::work> workUnit;
@@ -64,7 +68,4 @@ private:
 	std::thread asyncThread;
 
 	boost::asio::deadline_timer updateTimer;
-
-	//Signals
-	boost::signals2::signal<void()> sigRefreshTimer;
 };
