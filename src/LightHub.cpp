@@ -141,7 +141,7 @@ size_t LightHub::getConnectedNodeCount() const {
 }
 
 void LightHub::handleSendBroadcast(const boost::system::error_code& ec,
-	size_t bytesTransferred) {
+	size_t) {
 	if(ec) {
 		std::cout << "[Error] Failed to send broadcast ping message: "
 			<< ec.message() << std::endl;

@@ -38,7 +38,7 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	node->addListener(LightNode::STATE_CHANGE, &slotNodeStateChange);
 }
 
-void slotNodeStateChange(LightNode* node, LightNode::State_e prevState,
+void slotNodeStateChange(LightNode* node, LightNode::State_e,
 	LightNode::State_e newState) {
 
 	std::cout << "[Info] slotNodeStateChange: Node '" << node->getName()

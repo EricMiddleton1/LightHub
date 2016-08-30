@@ -7,6 +7,7 @@
 
 #include <boost/asio.hpp> //networking, io_service
 #include <boost/bind.hpp> //boost::bind
+#include <boost/signals2.hpp>
 
 #include "LightNode.hpp"
 

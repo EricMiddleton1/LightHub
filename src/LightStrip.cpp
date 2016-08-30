@@ -31,9 +31,6 @@ void LightStrip::setAll(const Color& c) {
 	for(auto& pixel : pixels) {
 		pixel = c;
 	}
-
-	std::cout << "[Info] LightStrip::setAll: Setting all pixels to "
-		<< c.toString() << std::endl;
 }
 
 std::vector<Color>& LightStrip::getPixels() {

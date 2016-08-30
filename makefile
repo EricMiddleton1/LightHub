@@ -1,54 +1,46 @@
-CC=g++
-LD=g++
+#Compiler/Linker
+CC = g++
+LD = g++
 
-CFLAGS=-std=c++14 -Wall
+#Flags
+CFLAGS = -std=c++14 -Wall -pedantic -Wextra
+LDFLAGS = -std=c++14 -Wall -pedantic -Wextra
+LIBS = -lboost_system -lpthread -lportaudio -lfftw3 -lX11
 
-srcdir=src
-objdir=obj
+#Extensions
+HEADER = .hpp
+SOURCE = .cpp
+BINARY = .o
 
-all: LightHub
+#Directories
+SRCDIR = src/
+OBJDIR = obj/
+DIRLIST = $(SRCDIR)
 
-LightHub: $(objdir)/Exception.o $(objdir)/Color.o $(objdir)/LightStrip.o \
-	$(objdir)/Packet.o $(objdir)/LightNode.o $(objdir)/LightHub.o \
-	$(objdir)/ILightEffect.o $(objdir)/LightEffectFade.o $(objdir)/Rhopalia.o \
-	$(objdir)/main.o
-	$(LD) $(CFLAGS) $(objdir)/Exception.o $(objdir)/Color.o \
-		$(objdir)/LightStrip.o $(objdir)/Packet.o $(objdir)/LightNode.o \
-		$(objdir)/LightHub.o $(objdir)/ILightEffect.o $(objdir)/LightEffectFade.o\
-		$(objdir)/Rhopalia.o $(objdir)/main.o \
-		-lboost_system -lpthread -o LightHub
+#Final executable name
+EXE = LightHub
 
-$(objdir)/Exception.o: $(srcdir)/Exception.hpp $(srcdir)/Exception.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/Exception.cpp -o $(objdir)/Exception.o
+#Generate list of source headers with extensions
+HEADERS = $(foreach DIR, $(DIRLIST), $(wildcard $(DIR)*$(HEADER)))
+SOURCES = $(foreach DIR, $(DIRLIST), $(wildcard $(DIR)*$(SOURCE)))
+OBJECTS = $(addprefix $(OBJDIR), $(addsuffix $(BINARY), $(notdir $(basename $(SOURCES)))))
+INCLUDE = $(foreach DIR, $(DIRLIST), -I$(DIR))
 
-$(objdir)/Color.o: $(srcdir)/Color.hpp $(srcdir)/Color.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/Color.cpp -o $(objdir)/Color.o
-
-$(objdir)/LightStrip.o: $(srcdir)/LightStrip.hpp $(srcdir)/LightStrip.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/LightStrip.cpp -o $(objdir)/LightStrip.o
-
-$(objdir)/Packet.o: $(srcdir)/Packet.hpp $(srcdir)/Packet.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/Packet.cpp -o $(objdir)/Packet.o
-
-$(objdir)/LightNode.o: $(srcdir)/LightNode.hpp $(srcdir)/LightNode.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/LightNode.cpp -o $(objdir)/LightNode.o
-
-$(objdir)/LightHub.o: $(srcdir)/LightHub.hpp $(srcdir)/LightHub.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/LightHub.cpp -o $(objdir)/LightHub.o
-
-$(objdir)/ILightEffect.o: $(srcdir)/ILightEffect.hpp $(srcdir)/ILightEffect.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/ILightEffect.cpp -o $(objdir)/ILightEffect.o
-
-$(objdir)/LightEffectFade.o: $(srcdir)/LightEffectFade.hpp \
-	$(srcdir)/LightEffectFade.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/LightEffectFade.cpp -o \
-		$(objdir)/LightEffectFade.o
-
-$(objdir)/Rhopalia.o: $(srcdir)/Rhopalia.hpp $(srcdir)/Rhopalia.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/Rhopalia.cpp -o $(objdir)/Rhopalia.o
-
-$(objdir)/main.o: $(srcdir)/main.hpp $(srcdir)/main.cpp
-	$(CC) $(CFLAGS) -c $(srcdir)/main.cpp -o $(objdir)/main.o
+all: $(EXE)
 
 clean:
-	rm $(objdir)/*.o
+	rm -rf $(EXE) $(OBJDIR)
+
+$(EXE):	$(OBJECTS)
+				$(CC) $(CFLAGS) $(OBJECTS) -o $(EXE) $(LDFLAGS) $(LIBS)
+
+force: clean $(EXE)
+
+$(OBJDIR)%$(BINARY):	$(SRCDIR)%$(SOURCE) $(OBJDIR)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< $(LDFLAGS) -o $@
+
+$(OBJDIR):
+	mkdir $@
+
+depend:
+	gccmakedep -- $(LDFLAGS) -- $(SOURCES) $(HEADERS)

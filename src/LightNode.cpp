@@ -115,7 +115,7 @@ void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
 }
 
 void LightNode::cbInfo(const boost::system::error_code& error,
-	size_t bytesTransferred) {
+	size_t) {
 
 	//TODO: deal with errors
 
@@ -125,8 +125,7 @@ void LightNode::cbInfo(const boost::system::error_code& error,
 	}
 }
 
-void LightNode::cbSendUpdate(const boost::system::error_code& error,
-	size_t bytesTransferred) {
+void LightNode::cbSendUpdate(const boost::system::error_code& error, size_t) {
 
 	//TODO: deal with errors
 
@@ -250,10 +249,6 @@ void LightNode::releaseLightStrip(bool _isDirty) {
 	stripMutex.unlock();
 
 	isDirty = _isDirty;
-
-	if(isDirty)
-		std::cout << "[Info] LightNode::releaseLightStrip: LightNode now dirty"
-			<< std::endl;
 }
 
 bool LightNode::update() {
@@ -269,9 +264,6 @@ bool LightNode::update() {
 
 		datagram = Packet::Update(strip.getPixels()).asDatagram();
 	} //Mutex gets unlocked here
-
-	std::cout << "[Info] LightNode::update: Sending update to '" << name
-		<< "' with color " << strip.getPixels()[0].toString() << std::endl;
 
 	udpSocket.async_send_to(boost::asio::buffer(datagram), udpEndpoint,
 		[this](const boost::system::error_code& error,
