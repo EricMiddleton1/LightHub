@@ -32,6 +32,8 @@ public:
 	float getHSVSaturation() const;
 	float getValue() const;
 
+	Color filter(const Color&, double);
+
 	void print() const;
 
 	static Color HSL(float hue, float saturation, float lightness);

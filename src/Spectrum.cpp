@@ -113,6 +113,14 @@ FrequencyBin& Spectrum::get(double frequency) {
 	return *foundBin;
 }
 
+FrequencyBin& Spectrum::getByIndex(size_t index) {
+	return bins[index];
+}
+
+size_t Spectrum::getBinCount() {
+	return bins.size();
+}
+
 void Spectrum::clear() {
 	for(auto& bin : bins) {
 		bin.energy = 0.;
@@ -142,6 +150,10 @@ void Spectrum::updateStats() {
 
 double Spectrum::getAverageEnergy() const {
 	return sum / bins.size();
+}
+
+double Spectrum::getAverageEnergyDB() const {
+	return 20. * std::log10(getAverageEnergy());
 }
 
 double Spectrum::getTotalEnergy() const {

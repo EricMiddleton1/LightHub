@@ -10,3 +10,6 @@
 #include "LightNode.hpp"
 #include "LightEffectSolid.hpp"
 #include "LightEffectFade.hpp"
+#include "LightEffectSoundSolid.hpp"
+
+#include "SoundColor.hpp"

@@ -46,6 +46,16 @@ byte Color::getBlue() const {
 	return b;
 }
 
+Color Color::filter(const Color& other, double factor) {
+	double invFactor = 1. - factor;
+
+	r = other.r*factor + r*invFactor;
+	g = other.g*factor + g*invFactor;
+	b = other.b*factor + b*invFactor;
+
+	return *this;
+}
+
 float Color::getHue() const {
 	int min = std::min(r, std::min(g, b)), max = std::max(r, std::max(g, b));
 	float chroma = max - min;
