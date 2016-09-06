@@ -28,7 +28,7 @@ int main() {
 	SoundColorSettings scs;
 	scs.bassFreq = 120.;
 	scs.trebbleFreq = 4000.;
-	scs.bassBoost = 0.;
+	scs.bassBoost = 10.;
 	scs.trebbleBoost = 20.;
 	scs.fStart = 0;
 	scs.fEnd = 20000;
@@ -41,6 +41,19 @@ int main() {
 	scs.filterStrength = 0.2;
 	scs.centerSpread = 0.5;
 	scs.centerBehavior = SoundColorSettings::MONO;
+
+	scs.beatDetectorSettings.freqBassMin = 20.;
+	scs.beatDetectorSettings.freqBassMax = 100.;
+	scs.beatDetectorSettings.freqTrebbleMin = 1000.;
+	scs.beatDetectorSettings.freqTrebbleMax = 20000.;
+	scs.beatDetectorSettings.noiseFloorBass = -120.;
+	scs.beatDetectorSettings.noiseFloorTrebble = -120.;
+	scs.beatDetectorSettings.thresholdBass = 2;
+	scs.beatDetectorSettings.thresholdTrebble = 10;
+	scs.beatDetectorSettings.filter = 0.8;
+
+
+
 
 	//Create a SoundColor
 	//SoundColor soundColor(spectrumAnalyzer, scs);

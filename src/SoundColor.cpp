@@ -5,6 +5,8 @@
 #include <functional>
 #include <sstream>
 
+#include <cstdio> //For printf
+
 
 std::string SoundColorSettings::toString() {
 	std::stringstream ss;
@@ -32,6 +34,7 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	const SoundColorSettings& _settings)
 	:	settings(_settings)
 	,	spectrumAnalyzer{_spectrumAnalyzer}
+	,	beatDetector{spectrumAnalyzer, settings.beatDetectorSettings}
 	,	hasChanged{false} {
 
 	std::cout << settings.toString() << std::endl;
@@ -51,6 +54,15 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	//bassBin minimum of 2
 	if(bassBin < 2)
 		bassBin = 2;
+	
+	//Determine the corresponding bin to freqTrebble
+	size_t trebbleBin = 0;
+	for(trebbleBin = bassBin; trebbleBin < spectrum->getBinCount(); ++trebbleBin) {
+		auto& bin = spectrum->getByIndex(trebbleBin);
+
+		if(bin.getFreqCenter() >= settings.trebbleFreq)
+			break;
+	}
 
 	for(size_t i = 0; i < bassBin; i++) {
 		double hue = i * 30. / (bassBin - 2);
@@ -62,15 +74,26 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 		std::cout << hue << ":\t" << c.toString() << '\n';
 	}
 
-	for(size_t i = bassBin; i < spectrum->getBinCount(); i++) {
+	for(size_t i = bassBin; i < trebbleBin; i++) {
 		double hue = 30. + (i - bassBin) * 210. /
-			(spectrum->getBinCount() - bassBin - 1);
+			(trebbleBin - bassBin - 1);
 
 		Color c = Color::HSV(hue, 1., 1.);
 
 		frequencyColors.push_back(c);
 
 		std::cout << hue << ":\t" << c.toString() << '\n';
+	}
+
+	for(size_t i = trebbleBin; i < spectrum->getBinCount(); ++i) {
+		double hue = 180. + (i - trebbleBin) * 30. /
+			(spectrum->getBinCount() - trebbleBin - 1);
+
+		hue = 240.;
+
+		frequencyColors.push_back(Color::HSV(hue, 1., 1.));
+
+		std::cout << hue << '\n';
 	}
 
 	std::cout << std::endl;
@@ -109,10 +132,25 @@ void SoundColor::cbSpectrum(SpectrumAnalyzer*,
 	std::shared_ptr<Spectrum> rightSpectrum) {
 
 	//Render color for left, right channels
-	renderColor(left, *leftSpectrum.get());
+	//renderColor(left, *leftSpectrum.get());
 	//renderColor(right, *rightSpectrum.get());
 
 	//std::cout << left.c.toString() << std::endl;
+
+	//Beat detection stuff
+	bool leftBass, leftTrebble, rightBass, rightTrebble;
+
+	beatDetector.getBeat(&leftBass, &leftTrebble, &rightBass, &rightTrebble);
+
+	bool bass = leftBass | rightBass,
+		trebble = leftTrebble | rightTrebble;
+	
+	Color beatColor(255*bass, 0, 255*trebble);
+
+	left.c = beatColor;
+	right.c = beatColor;
+	center.c = beatColor;
+
 
 	//TODO: render color for center channel
 
@@ -195,7 +233,8 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 		b *= scale;
 	}
 
-	std::cout << r << ' ' << g << ' ' << b << std::endl;
+	//std::cout << r << ' ' << g << ' ' << b << std::endl;
+	std::printf("%3d %3d %3d\n", (int)r, (int)g, (int)b);
 
 	Color c(r, g, b);
 	double h = c.getHue(), s = c.getHSVSaturation(), v = c.getValue();
