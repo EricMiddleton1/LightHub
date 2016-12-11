@@ -22,38 +22,25 @@ int main() {
 
 	//Create a spectrum analyzer
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer =
-		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 1);
+		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3,4096,1);
 	
 	//Configure SoundColor settings
 	SoundColorSettings scs;
 	scs.bassFreq = 120.;
 	scs.trebbleFreq = 4000.;
 	scs.bassBoost = 10.;
-	scs.trebbleBoost = 20.;
+	scs.trebbleBoost = 0.;
 	scs.fStart = 0;
 	scs.fEnd = 20000;
-	scs.dbScaler = 60.;
-	scs.dbFactor = 0.6;
+	scs.dbScaler = 3000.;
+	scs.dbFactor = 1;
 	scs.avgFactor = 0.5;
-	scs.noiseFloor = 150.;
+	scs.noiseFloor = 80.;
 	scs.slopeLimitAvg = 0.2;
-	scs.minSaturation = 0.5;
-	scs.filterStrength = 0.2;
+	scs.minSaturation = 0.2;
+	scs.filterStrength = 0.6;
 	scs.centerSpread = 0.5;
 	scs.centerBehavior = SoundColorSettings::MONO;
-
-	scs.beatDetectorSettings.freqBassMin = 20.;
-	scs.beatDetectorSettings.freqBassMax = 100.;
-	scs.beatDetectorSettings.freqTrebbleMin = 1000.;
-	scs.beatDetectorSettings.freqTrebbleMax = 20000.;
-	scs.beatDetectorSettings.noiseFloorBass = -120.;
-	scs.beatDetectorSettings.noiseFloorTrebble = -120.;
-	scs.beatDetectorSettings.thresholdBass = 2;
-	scs.beatDetectorSettings.thresholdTrebble = 10;
-	scs.beatDetectorSettings.filter = 0.8;
-
-
-
 
 	//Create a SoundColor
 	//SoundColor soundColor(spectrumAnalyzer, scs);
@@ -86,10 +73,8 @@ int main() {
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
 		<< node->getName() << "'" << std::endl;
-
+	
 	effect->addNode(node);
-
-	node->addListener(LightNode::STATE_CHANGE, &slotNodeStateChange);
 }
 
 void slotNodeStateChange(LightNode* node, LightNode::State_e,

@@ -34,7 +34,6 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	const SoundColorSettings& _settings)
 	:	settings(_settings)
 	,	spectrumAnalyzer{_spectrumAnalyzer}
-	,	beatDetector{spectrumAnalyzer, settings.beatDetectorSettings}
 	,	hasChanged{false} {
 
 	std::cout << settings.toString() << std::endl;
@@ -132,27 +131,11 @@ void SoundColor::cbSpectrum(SpectrumAnalyzer*,
 	std::shared_ptr<Spectrum> rightSpectrum) {
 
 	//Render color for left, right channels
-	//renderColor(left, *leftSpectrum.get());
-	//renderColor(right, *rightSpectrum.get());
+	renderColor(left, *leftSpectrum.get());
+	renderColor(right, *rightSpectrum.get());
 
-	//std::cout << left.c.toString() << std::endl;
+	std::cout << left.c.toString() << std::endl;
 
-	//Beat detection stuff
-	bool leftBass, leftTrebble, rightBass, rightTrebble;
-
-	beatDetector.getBeat(&leftBass, &leftTrebble, &rightBass, &rightTrebble);
-
-	bool bass = leftBass | rightBass,
-		trebble = leftTrebble | rightTrebble;
-	
-	Color beatColor(255*bass, 0, 255*trebble);
-
-	left.c = beatColor;
-	right.c = beatColor;
-	center.c = beatColor;
-
-
-	//TODO: render color for center channel
 
 	hasChanged = true;
 }
@@ -178,7 +161,7 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 	}
 
 	//Scale to be applied to each bin
-	double scale = 1. / (settings.dbScaler * binCount);
+	double scale = 1. / settings.dbScaler;
 
 	for(unsigned int i = 0; i < binCount; ++i) {
 		FrequencyBin& bin = spectrum.getByIndex(i);
@@ -202,7 +185,7 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 			//Raise by noise floor, subtract loosly-tracking average
 			db += settings.noiseFloor - prevColor.avg;
 
-			//Reject anything below the noise floor
+			//Reject anything below the average
 			if(db <= 0)
 				continue;
 
@@ -234,7 +217,7 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 	}
 
 	//std::cout << r << ' ' << g << ' ' << b << std::endl;
-	std::printf("%3d %3d %3d\n", (int)r, (int)g, (int)b);
+	//std::printf("%3d %3d %3d\n", (int)r, (int)g, (int)b);
 
 	Color c(r, g, b);
 	double h = c.getHue(), s = c.getHSVSaturation(), v = c.getValue();

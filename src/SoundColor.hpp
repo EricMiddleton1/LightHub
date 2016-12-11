@@ -7,7 +7,6 @@
 #include <boost/signals2.hpp>
 
 #include "SpectrumAnalyzer.hpp"
-#include "BeatDetector.hpp"
 #include "Color.hpp"
 
 struct SoundColorSettings
@@ -43,9 +42,6 @@ struct SoundColorSettings
 		CENTER
 	} centerBehavior;
 
-	BeatDetectorSettings beatDetectorSettings; //Settings for beat detector
-
-
 	std::string toString();
 };
 
@@ -74,8 +70,6 @@ private:
 	SoundColorSettings settings;
 
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
-
-	BeatDetector beatDetector;
 
 	std::vector<Color> frequencyColors;
 

@@ -61,6 +61,7 @@ public:
 	double getAverageEnergy() const;
 	double getAverageEnergyDB() const;
 	double getTotalEnergy() const;
+	double getTotalEnergyDB() const;
 
 	double getMinFrequency() const;
 	double getMaxFrequency() const;

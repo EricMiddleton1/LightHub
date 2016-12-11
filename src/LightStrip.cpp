@@ -36,3 +36,7 @@ void LightStrip::setAll(const Color& c) {
 std::vector<Color>& LightStrip::getPixels() {
 	return pixels;
 }
+
+int LightStrip::getSize() {
+	return pixels.size();
+}
