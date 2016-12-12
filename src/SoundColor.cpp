@@ -21,7 +21,7 @@ std::string SoundColorSettings::toString() {
 		<< "dbFactor = " << dbFactor << '\n'
 		<< "avgFactor = " << avgFactor << '\n'
 		<< "noiseFloor = " << noiseFloor << '\n'
-		<< "slopeLimitAvg = " << slopeLimitAvg << '\n'
+		<< "avgFilterStrength = " << avgFilterStrength << '\n'
 		<< "minSaturation = " << minSaturation << '\n'
 		<< "filterStrength = " << filterStrength << '\n'
 		<< "centerSpread = " << centerSpread << '\n';
@@ -64,7 +64,7 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	}
 
 	for(size_t i = 0; i < bassBin; i++) {
-		double hue = i * 30. / (bassBin - 2);
+		double hue = i * 30. / (bassBin);
 
 		Color c = Color::HSV(hue, 1., 1.);
 
@@ -73,26 +73,15 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 		std::cout << hue << ":\t" << c.toString() << '\n';
 	}
 
-	for(size_t i = bassBin; i < trebbleBin; i++) {
+	for(size_t i = bassBin; i < spectrum->getBinCount(); i++) {
 		double hue = 30. + (i - bassBin) * 210. /
-			(trebbleBin - bassBin - 1);
+			(spectrum->getBinCount() - bassBin - 1);
 
 		Color c = Color::HSV(hue, 1., 1.);
 
 		frequencyColors.push_back(c);
 
 		std::cout << hue << ":\t" << c.toString() << '\n';
-	}
-
-	for(size_t i = trebbleBin; i < spectrum->getBinCount(); ++i) {
-		double hue = 180. + (i - trebbleBin) * 30. /
-			(spectrum->getBinCount() - trebbleBin - 1);
-
-		hue = 240.;
-
-		frequencyColors.push_back(Color::HSV(hue, 1., 1.));
-
-		std::cout << hue << '\n';
 	}
 
 	std::cout << std::endl;
@@ -151,14 +140,19 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 		curAvg = 0;
 
 	//Loosely track the average DB
-	if(prevColor.avg > curAvg) {
+	/*if(prevColor.avg > curAvg) {
 		//Slope limiting
 		prevColor.avg -= std::min(settings.slopeLimitAvg, prevColor.avg - curAvg);
 	}
 	else {
 		//Jump up to current average
-		prevColor.avg = curAvg;
-	}
+		//prevColor.avg = curAvg;
+
+		//Slope limiting
+		prevColor.avg += std::min(settings.slopeLimitAvg, curAvg - prevColor.avg);
+	}*/
+	prevColor.avg = prevColor.avg*settings.avgFilterStrength
+		+ curAvg*(1. - settings.avgFilterStrength);
 
 	//Scale to be applied to each bin
 	double scale = 1. / settings.dbScaler;
@@ -172,6 +166,7 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 
 		if(f >= settings.fStart) {
 			Color c = frequencyColors[i];
+			//Color c = Color::HSV(240.f * i / (binCount - 1), 1.f, 1.f);
 			double db = bin.getEnergyDB();
 
 			//Bass boost
@@ -183,14 +178,15 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 				db += settings.trebbleBoost;
 
 			//Raise by noise floor, subtract loosly-tracking average
-			db += settings.noiseFloor - prevColor.avg;
+			db += settings.noiseFloor;// - prevColor.avg;
 
 			//Reject anything below the average
-			if(db <= 0)
+			if(db <= prevColor.avg)
 				continue;
 
 			//Scale partially based on average level
-			db *= (settings.dbFactor + settings.avgFactor*prevColor.avg);
+			db *= settings.dbFactor;
+			db += settings.avgFactor*prevColor.avg;
 
 			//Add weighted color to running color average
 			r += db * c.getRed();

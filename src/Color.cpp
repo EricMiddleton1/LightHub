@@ -49,9 +49,9 @@ byte Color::getBlue() const {
 Color Color::filter(const Color& other, double factor) {
 	double invFactor = 1. - factor;
 
-	r = other.r*factor + r*invFactor;
-	g = other.g*factor + g*invFactor;
-	b = other.b*factor + b*invFactor;
+	r = r*factor + other.r*invFactor;
+	g = g*factor + other.g*invFactor;
+	b = b*factor + other.b*invFactor;
 
 	return *this;
 }

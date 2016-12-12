@@ -1,5 +1,7 @@
 #include "SpectrumAnalyzer.hpp"
 
+#include <iostream>
+
 using namespace std;
 
 SpectrumAnalyzer::SpectrumAnalyzer(std::shared_ptr<AudioDevice>& _audioDevice,

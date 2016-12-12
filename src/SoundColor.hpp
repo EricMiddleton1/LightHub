@@ -29,7 +29,7 @@ struct SoundColorSettings
 
 	double noiseFloor; //Noise floor in dB
 
-	double slopeLimitAvg; //Slope limiter for average bin level
+	double avgFilterStrength; //Strength for bin average filter
 
 	double minSaturation; //minimum saturation value for color in HSV colorspace
 

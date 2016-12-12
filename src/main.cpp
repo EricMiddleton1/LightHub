@@ -26,18 +26,18 @@ int main() {
 	
 	//Configure SoundColor settings
 	SoundColorSettings scs;
-	scs.bassFreq = 120.;
+	scs.bassFreq = 150.;
 	scs.trebbleFreq = 4000.;
 	scs.bassBoost = 10.;
 	scs.trebbleBoost = 0.;
 	scs.fStart = 0;
 	scs.fEnd = 20000;
-	scs.dbScaler = 3000.;
+	scs.dbScaler = 700.;
 	scs.dbFactor = 1;
-	scs.avgFactor = 0.5;
-	scs.noiseFloor = 80.;
-	scs.slopeLimitAvg = 0.2;
-	scs.minSaturation = 0.2;
+	scs.avgFactor = 0.2;
+	scs.noiseFloor = 60.;
+	scs.avgFilterStrength = 0.4;
+	scs.minSaturation = 0.7;
 	scs.filterStrength = 0.6;
 	scs.centerSpread = 0.5;
 	scs.centerBehavior = SoundColorSettings::MONO;
