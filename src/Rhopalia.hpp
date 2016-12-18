@@ -19,7 +19,6 @@ public:
 	~Rhopalia();
 
 	//Overload to add listener of internal Rhopalia events
-	//But y tho
 /*
 	template <class T>
 	void addListener(ListenerType_e listenType, T slot) {
