@@ -37,7 +37,7 @@ public:
 	ID_e getID() const;
 	void setID(ID_e id);
 
-	std::vector<uint8_t> asDatagram();
+	std::vector<uint8_t> asDatagram() const;
 	
 	static Packet Ping();
 	static Packet Init();

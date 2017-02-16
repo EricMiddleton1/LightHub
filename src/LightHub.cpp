@@ -1,5 +1,6 @@
 #include "LightHub.hpp"
 
+using namespace std;
 
 LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort, DiscoveryMethod_e _discoveryMethod,
 	uint32_t _discoveryPeriod)
@@ -213,20 +214,27 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 		}
 		catch(const Exception& e) {
 			if(e.getErrorCode() == LIGHT_HUB_NODE_NOT_FOUND) {
-				//The sender is not in the list of connected nodes
+					//The sender is not in the list of connected nodes
+					
+					if(p.getID() == Packet::INFO) {
+					//TODO: Give the new node a unique name
+					//TODO: Have the node send its set name along with other parameters
+					std::string name = receiveEndpoint.address().to_string();
+					LightNode::Type_e type = static_cast<LightNode::Type_e>(p.getPayload()[0]);
+					uint16_t ledCount = (p.getPayload()[1] << 8) | (p.getPayload()[2]);
+					
+					auto newNode = std::make_shared<LightNode>(name, type, ledCount,
+						receiveEndpoint.address(), sendPort);
 
-				//TODO: Give the new node a unique name
-				//TODO: Have the node send its set name along with other parameters
-				std::string name = receiveEndpoint.address().to_string();
-				
-				auto newNode = std::make_shared<LightNode>(name,
-					receiveEndpoint.address(), sendPort);
+					//Store the new node
+					nodes.push_back(newNode);
 
-				//Store the new node
-				nodes.push_back(newNode);
-
-				//Send a signal
-				sigNodeDiscover(newNode);
+					//Send a signal
+					sigNodeDiscover(newNode);
+				}
+				else {
+					cout << "[Warning] Received packet from unconnected device with ID " << p.getID() << endl;
+				}
 			}
 			else {
 				//Some other error occurred

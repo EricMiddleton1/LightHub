@@ -6,6 +6,7 @@
 #include <memory> //std::shared_ptr
 #include <iostream> //DEBUG, for std::cout, std::endl
 #include <mutex>
+#include <cstdint>
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -21,8 +22,14 @@ class LightHub;
 class LightNode
 {
 public:
+	enum Type_e {
+		ANALOG = 0,
+		DIGITAL,
+		MATRIX
+	};
+
 	enum State_e {
-		DISCONNECTED,
+		DISCONNECTED = 0,
 		CONNECTING,
 		CONNECTED
 	};
@@ -31,7 +38,7 @@ public:
 		STATE_CHANGE
 	};
 
-	LightNode(const std::string& name,
+	LightNode(const std::string& name, Type_e type, uint16_t ledCount, 
 		const boost::asio::ip::address& addr, uint16_t sendPort);
 	
 	~LightNode();
@@ -45,10 +52,9 @@ public:
 	State_e getState() const;
 
 	std::string getName() const;
+	Type_e getType() const;
 
 	boost::asio::ip::address getAddress() const;
-
-	void receivePacket(Packet& p);
 
 	LightStrip& getLightStrip();
 	void releaseLightStrip(bool isDirty = true);
@@ -56,36 +62,40 @@ public:
 	static std::string stateToString(State_e state);
 
 private:
-	static const int PACKET_TIMEOUT = 1000;
+	static const int CONNECT_TIMEOUT = 1000;
+	static const int SEND_TIMEOUT = 1000;
 	static const int WATCHDOG_TIMEOUT = 10000;
 	static const int PACKET_RETRY_COUNT = 3;
 
 	friend class LightHub;
 
-	//Function to update the remote LightNode
 	bool update();
+
+	void receivePacket(const Packet& p);
 
 	void threadRoutine();
 
-	void cbInfoTimer(const boost::system::error_code& error);
+	void sendPacket(const Packet& p);
+
+	void cbConnectTimer(const boost::system::error_code& error);
+	void cbSendTimer(const boost::system::error_code& error);
 	void cbWatchdogTimer(const boost::system::error_code& error);
 
-	void cbInfo(const boost::system::error_code& error,
+	void cbSendPacket(uint8_t *buffer, const boost::system::error_code& error,
 		size_t bytesTransferred);
-	void cbSendUpdate(const boost::system::error_code& error,
-		size_t bytesTransferred);
-
-	void sendInfoRequest();
 
 	void changeState(State_e newState);
 
+	void resetSendTimer();
 	void feedWatchdog();
+	void setConnectTimer();
 
 	//Remote strip information
 	std::string name;
+	Type_e type;
 	LightStrip strip;
 	uint16_t pixelCount;
-	std::mutex stripMutex; //Mutex to protect access to strip
+	std::mutex stripMutex;
 	bool isDirty; //Indicates that the node needs to be updated
 
 	//Signals
@@ -97,10 +107,11 @@ private:
 	boost::asio::ip::udp::socket udpSocket;
 
 	//Timer stuff
-	boost::asio::deadline_timer infoTimer;
+	boost::asio::deadline_timer connectTimer;
 	boost::asio::deadline_timer watchdogTimer;
+	boost::asio::deadline_timer sendTimer;
 
-	int infoRetryCount;
+	int connectRetryCount;
 
 	//Thread stuff
 	std::unique_ptr<boost::asio::io_service::work> workPtr;

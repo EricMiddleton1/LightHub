@@ -1,16 +1,20 @@
 #include "LightNode.hpp"
 
+using namespace std;
 
-LightNode::LightNode(const std::string& _name,
+LightNode::LightNode(const string& _name, Type_e _type, uint16_t _ledCount,
 	const boost::asio::ip::address& addr, uint16_t sendPort)
 		:	name(_name)
-		,	pixelCount{0}
-		,	isDirty{false}
+		,	type{_type}
+		,	strip{_ledCount}
+		,	pixelCount{_ledCount}
+		,	isDirty{true}
 		,	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
-		,	infoTimer(ioService)
-		,	watchdogTimer(ioService) 
-		,	infoRetryCount{0}
+		,	connectTimer(ioService)
+		,	watchdogTimer(ioService)
+		,	sendTimer(ioService)
+		,	connectRetryCount{0}
 		,	state{CONNECTING} {
 
 	ioService.reset();
@@ -18,30 +22,21 @@ LightNode::LightNode(const std::string& _name,
 	//Create work unit so ioService doesn't return until deconstructor
 	workPtr.reset(new boost::asio::io_service::work(ioService));
 
-	//Open the socket
-	try {
-		udpSocket.open(boost::asio::ip::udp::v4());
-	}
-	catch(const std::exception& e) {
-		std::cout << "LightNode::LightNode: Exception caught on socket open: "
-			<< e.what() << std::endl;
-	}
+	udpSocket.open(boost::asio::ip::udp::v4());
+	
+	asyncThread = thread(std::bind(&LightNode::threadRoutine, this));
 
-	//Send status request
-	sendInfoRequest();
-
-	//Launch async thread
-	asyncThread = std::thread(std::bind(&LightNode::threadRoutine, this));
+	sendPacket(Packet::Init());
+	setConnectTimer();
 }
 
 LightNode::~LightNode() {
 	//Make sure nobody has a reference to the LightStrip
-	std::unique_lock<std::mutex> stripLock(stripMutex);
+	unique_lock<mutex> stripLock(stripMutex);
 
 	//Clear the io_service work unit
 	workPtr.reset();
 
-	//Wait for the async thread to finish
 	asyncThread.join();
 }
 
@@ -53,60 +48,45 @@ void LightNode::addListener(ListenerType_e listenType,
 		sigStateChange.connect(slot);
 	}
 	else {
-		//This shouldn't happen
-		std::cout << "[Error] LightNode::addListener: Invalid listener type"
-			<< std::endl;
+		cout << "[Error] LightNode::addListener: Invalid listener type"
+			<< endl;
 	}
 }
 
 void LightNode::threadRoutine() {
 	ioService.run();
 
-	std::cout << "[Info] threadRoutine finished." << std::endl;
+	cout << "[Info] threadRoutine finished." << endl;
 }
 
-void LightNode::sendInfoRequest() {
-	//Send status request packet
-	udpSocket.async_send_to(boost::asio::buffer(Packet::Init().asDatagram()),
-		udpEndpoint,
-		[this](const boost::system::error_code& error, size_t bytesTransferred) {
-			cbInfo(error, bytesTransferred);
-		});
-
-	//Set status request timeout timer
-	infoTimer.expires_from_now(
-		boost::posix_time::milliseconds(PACKET_TIMEOUT));
-
-	//Start timeout timer
-	infoTimer.async_wait([this](const boost::system::error_code& error) {
-		cbInfoTimer(error);
-	});
-}
-
-void LightNode::cbInfoTimer(const boost::system::error_code& error) {
+void LightNode::cbConnectTimer(const boost::system::error_code& error) {
 	if(error.value() == boost::system::errc::operation_canceled) {
-		//We manually cancelled the timer
 		return;
 	}
 
-	if(infoRetryCount >= PACKET_RETRY_COUNT) {
-		//We've already made enough attemps, we're disconnected
+	connectRetryCount++;
+	if(connectRetryCount > PACKET_RETRY_COUNT) {
 		changeState(DISCONNECTED);
+	}
+	else {
+		sendPacket(Packet::Init());
+		setConnectTimer();
+	}
+}
 
+void LightNode::cbSendTimer(const boost::system::error_code& error) {
+	if(error.value() == boost::system::errc::operation_canceled) {
 		return;
 	}
-
-	std::cout << "[Info] Retrying info request"
-		<< std::endl;
-
-	infoRetryCount++;
-
-	sendInfoRequest();
+	
+	if(state == CONNECTED) {
+		//Send an alive packet so node doesn't disconnect
+		sendPacket(Packet::Alive());
+	}
 }
 
 void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
 	if(error.value() == boost::system::errc::operation_canceled) {
-		//We manually reset the watchdog timer
 		return;
 	}
 
@@ -114,54 +94,45 @@ void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
 	changeState(DISCONNECTED);
 }
 
-void LightNode::cbInfo(const boost::system::error_code& error,
-	size_t) {
+void LightNode::cbSendPacket(uint8_t *buffer, const boost::system::error_code& error, size_t) {
 
 	//TODO: deal with errors
 
 	if(error) {
-		std::cout << "[Error] LightNode::cbInfo: " << error.message()
-			<< std::endl;
+		cout << "[Error] LightNode::cbSendUpdate: " << error.message()
+			<< endl;
 	}
-}
 
-void LightNode::cbSendUpdate(const boost::system::error_code& error, size_t) {
-
-	//TODO: deal with errors
-
-	if(error) {
-		std::cout << "[Error] LightNode::cbSendUpdate: " << error.message()
-			<< std::endl;
-	}
+	delete[] buffer;
 }
 
 void LightNode::changeState(State_e newState) {
 	if(state == newState) {
-		//This is not a state change
 		return;
 	}
 
 	State_e oldState = state;
 	state = newState;
 
-	//If DISCONNECTED->CONNECTING, request status from node
-	if(oldState == DISCONNECTED && newState == CONNECTING)
-		sendInfoRequest();
-
-	//If now CONNECTED, start watchdog timer
+	//If now CONNECTED, start watchdog and send timers
 	if(newState == CONNECTED) {
 		feedWatchdog();
+		resetSendTimer();
 
 		//Indicate that an update is needed
 		isDirty = true;
-
-		//Send a blank update
-		//sendUpdate();
-		//DON'T do this anymore, all updates done in sync
 	}
 
 	//notify the callback
 	sigStateChange(this, oldState, newState);
+}
+
+void LightNode::resetSendTimer() {
+	sendTimer.cancel();
+
+	sendTimer.expires_from_now(
+		boost::posix_time::milliseconds(SEND_TIMEOUT));
+	sendTimer.async_wait(std::bind(&LightNode::cbSendTimer, this, std::placeholders::_1));
 }
 
 void LightNode::feedWatchdog() {
@@ -172,15 +143,44 @@ void LightNode::feedWatchdog() {
 		boost::posix_time::milliseconds(WATCHDOG_TIMEOUT));
 
 	//Start watchdog timer
-	watchdogTimer.async_wait([this](const boost::system::error_code& error) {
-		cbWatchdogTimer(error);
-	});
+	watchdogTimer.async_wait(std::bind(&LightNode::cbWatchdogTimer, this, std::placeholders::_1));
+}
 
+void LightNode::setConnectTimer() {
+	connectTimer.cancel();
+	connectTimer.expires_from_now(boost::posix_time::milliseconds(CONNECT_TIMEOUT));
+	connectTimer.async_wait(std::bind(&LightNode::cbConnectTimer, this, std::placeholders::_1));
 }
 
 void LightNode::connect() {
-	if(state == DISCONNECTED)
-		changeState(CONNECTING);
+	if(state != DISCONNECTED)
+		return;
+
+	connectRetryCount = 0;
+
+	sendPacket(Packet::Init());
+
+	changeState(CONNECTING);
+	setConnectTimer();
+}
+
+void LightNode::sendPacket(const Packet& p) {
+	auto datagram = p.asDatagram();
+	size_t bufferLen = datagram.size();
+	uint8_t *buffer = new uint8_t[bufferLen];
+
+	if(buffer == NULL)
+		return;
+	
+	copy(datagram.begin(), datagram.end(), buffer);
+
+	udpSocket.async_send_to(boost::asio::buffer(buffer, bufferLen), udpEndpoint,
+		std::bind(&LightNode::cbSendPacket, this, buffer, std::placeholders::_1,
+		std::placeholders::_2));
+
+	if(state == CONNECTED) {
+		resetSendTimer();
+	}
 }
 
 void LightNode::disconnect() {
@@ -191,48 +191,41 @@ LightNode::State_e LightNode::getState() const {
 	return state;
 }
 
-std::string LightNode::getName() const {
+string LightNode::getName() const {
 	return name;
+}
+
+LightNode::Type_e LightNode::getType() const {
+	return type;
 }
 
 boost::asio::ip::address LightNode::getAddress() const {
 	return udpEndpoint.address();
 }
 
-void LightNode::receivePacket(Packet& p) {
-//	std::cout << "[Info] LightNode::receivePacket: Packet received with ID "
-//		<< p.getID() << std::endl;
-
+void LightNode::receivePacket(const Packet& p) {
 	switch(p.getID()) {
-		case Packet::INFO: {
-			int _pixelCount = (p.getPayload()[0] << 8) | p.getPayload()[1];
-
-			if(_pixelCount != pixelCount) {
-				std::unique_lock<std::mutex> stripLock(stripMutex);
-
-				pixelCount = _pixelCount;
-				strip = LightStrip(pixelCount);
-			}
-
-			//Cancel the timeout timer
-			infoTimer.cancel();
-
-			changeState(CONNECTED);
-		}
-		break;
-
 		case Packet::ALIVE:
 		case Packet::ACK:
-			//Feed the watchdog
-			feedWatchdog();
-
-			if(state == DISCONNECTED) {
-				changeState(CONNECTING);
+			if(state == CONNECTING) {
+				connectTimer.cancel();
 			}
+
+			if(state != CONNECTED) {
+				changeState(CONNECTED);
+
+			}
+			else {
+				feedWatchdog();
+			}
+		break;
+
+		case Packet::NACK:
+			cout << "[Warning] LightNode::receivePacket: Received NACK (" << strip.getSize() << ")" << endl;
 		break;
 
 		default:
-		//Do something
+			cout << "[Warning] LightNode::receivePacket: Unexpected packet type (" << p.getID() << ")" << endl;
 		break;
 	}
 }
@@ -256,20 +249,15 @@ bool LightNode::update() {
 	if(state != CONNECTED || !isDirty)
 		return false;
 
-	std::vector<uint8_t> datagram;
+	Packet p;
 
 	{
-		//Lock the strip mutex
-		std::unique_lock<std::mutex> stripLock(stripMutex);
+		unique_lock<mutex> stripLock(stripMutex);
 
-		datagram = Packet::Update(strip.getPixels()).asDatagram();
-	} //Mutex gets unlocked here
+		p = Packet::Update(strip.getPixels());
+	}
 
-	udpSocket.async_send_to(boost::asio::buffer(datagram), udpEndpoint,
-		[this](const boost::system::error_code& error,
-			size_t bytesTransferred) {
-				cbSendUpdate(error, bytesTransferred);
-		});
+	sendPacket(p);
 
 	//Clear the dirty bit
 	isDirty = false;
@@ -277,8 +265,8 @@ bool LightNode::update() {
 	return true;
 }
 
-std::string LightNode::stateToString(State_e state) {
-	std::string str;
+string LightNode::stateToString(State_e state) {
+	string str;
 
 	switch(state) {
 		case DISCONNECTED:

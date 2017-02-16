@@ -25,9 +25,9 @@ Packet::Packet(const std::vector<uint8_t>& datagram) {
 	id = (ID_e)datagram[2];
 
 	if(id == INFO) {
-		if(datagram.size() != 5) {
+		if(datagram.size() != 6) {
 			throw Exception(PACKET_INVALID_SIZE,
-				"[Packet::Packet]Error: Packet size != 5 for type INFO");
+				"[Packet::Packet]Error: Packet size != 6 for type INFO");
 		}
 		payload = std::vector<uint8_t>(datagram.begin() + 3,
 																					datagram.end());
@@ -60,7 +60,7 @@ void Packet::setID(Packet::ID_e id) {
 	this->id = id;
 }
 
-std::vector<uint8_t> Packet::asDatagram() {
+std::vector<uint8_t> Packet::asDatagram() const{
 	std::vector<uint8_t> datagram;
 
 	//Two byte header value

@@ -3,7 +3,8 @@
 
 LightEffectFade::LightEffectFade(float brightness, float speed)
 	:	brightness{brightness}
-	,	speed{speed} {
+	,	speed{speed}
+	,	hue{0.}{
 
 }
 

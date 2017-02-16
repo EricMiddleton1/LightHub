@@ -8,14 +8,15 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
 
-std::shared_ptr<LightEffectSoundSolid> effect;
+//std::shared_ptr<LightEffectSoundSolid> effect;
+std::shared_ptr<LightEffectFade> effect;
 
 int main() {
 
 
 	//Add the effect to the controller
 	//controller.addEffect(effectFade);
-	
+/*	
 	//Create an audio device
 	std::shared_ptr<AudioDevice> audioDevice =
 		std::make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
@@ -23,7 +24,7 @@ int main() {
 	//Create a spectrum analyzer
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer =
 		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3,4096,1);
-	
+
 	//Configure SoundColor settings
 	SoundColorSettings scs;
 	scs.bassFreq = 150.;
@@ -46,8 +47,8 @@ int main() {
 	//SoundColor soundColor(spectrumAnalyzer, scs);
 
 	effect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
-	
-
+*/
+	effect = std::make_shared<LightEffectFade>(0.25, 1.);
 
 	Rhopalia controller;
 
@@ -55,7 +56,7 @@ int main() {
 
 	controller.addEffect(effect);
 	//Start the audio device
-	audioDevice->startStream();
+	//audioDevice->startStream();
 
 
 
@@ -71,8 +72,12 @@ int main() {
 }
 
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
+	size_t ledCount = node->getLightStrip().getSize();
+	node->releaseLightStrip();
+
 	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
-		<< node->getName() << "'" << std::endl;
+		<< node->getName() << "' of type '"<< node->getType()
+		<< "' with " << ledCount << " leds" << std::endl;
 	
 	effect->addNode(node);
 }
