@@ -48,7 +48,7 @@ int main() {
 
 	effect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
 */
-	effect = std::make_shared<LightEffectFade>(0.25, 1.);
+	effect = std::make_shared<LightEffectFade>(1., 1.);
 
 	Rhopalia controller;
 
@@ -72,6 +72,8 @@ int main() {
 }
 
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
+	node->addListener(LightNode::STATE_CHANGE, slotNodeStateChange);
+
 	size_t ledCount = node->getLightStrip().getSize();
 	node->releaseLightStrip();
 

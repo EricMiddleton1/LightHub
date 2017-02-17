@@ -16,6 +16,9 @@ LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort, DiscoveryMethod_e _di
 
 	//Allow the socket to send broadcast packets
 	sendSocket.set_option(boost::asio::socket_base::broadcast(true));
+	sendSocket.set_option(boost::asio::socket_base::reuse_address(true));
+
+	recvSocket.set_option(boost::asio::socket_base::reuse_address(true));
 	
 	//Construct the work unit for the io_service
 	ioWork.reset(new boost::asio::io_service::work(ioService));

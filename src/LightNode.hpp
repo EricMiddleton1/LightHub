@@ -64,7 +64,7 @@ public:
 private:
 	static const int CONNECT_TIMEOUT = 1000;
 	static const int SEND_TIMEOUT = 1000;
-	static const int WATCHDOG_TIMEOUT = 10000;
+	static const int WATCHDOG_TIMEOUT = 3000;
 	static const int PACKET_RETRY_COUNT = 3;
 
 	friend class LightHub;

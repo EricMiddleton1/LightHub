@@ -41,10 +41,17 @@ Packet::Packet(const std::vector<uint8_t>& datagram) {
 		payload = std::vector<uint8_t>(datagram.begin() + 3,
 																					datagram.end());
 	}
+	else if(id == NACK) {
+		if(datagram.size() != 4) {
+			throw Exception(PACKET_INVALID_SIZE,
+				"[Packet::Packet]Error: Packet size != 3 for type NACK");
+		}
+		payload = std::vector<uint8_t>({datagram[3]});
+	}
 	//All others have payload size = 0
 }
 
-std::vector<uint8_t>& Packet::getPayload() {
+std::vector<uint8_t> Packet::getPayload() const {
 	return payload;
 }
 

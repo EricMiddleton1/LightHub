@@ -31,7 +31,7 @@ public:
 	Packet(const std::vector<uint8_t>& datagram);
 
 
-	std::vector<uint8_t>& getPayload();
+	std::vector<uint8_t> getPayload() const;
 	void setPayload(const std::vector<uint8_t>& payload);
 
 	ID_e getID() const;

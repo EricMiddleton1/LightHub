@@ -122,6 +122,9 @@ void LightNode::changeState(State_e newState) {
 		//Indicate that an update is needed
 		isDirty = true;
 	}
+	else if(newState == CONNECTING) {
+		connect();
+	}
 
 	//notify the callback
 	sigStateChange(this, oldState, newState);
@@ -153,7 +156,7 @@ void LightNode::setConnectTimer() {
 }
 
 void LightNode::connect() {
-	if(state != DISCONNECTED)
+	if(state == CONNECTED)
 		return;
 
 	connectRetryCount = 0;
@@ -205,6 +208,13 @@ boost::asio::ip::address LightNode::getAddress() const {
 
 void LightNode::receivePacket(const Packet& p) {
 	switch(p.getID()) {
+		case Packet::INFO:
+			if(state == DISCONNECTED) {
+
+				changeState(CONNECTING);
+			}
+		break;
+
 		case Packet::ALIVE:
 		case Packet::ACK:
 			if(state == CONNECTING) {
@@ -221,7 +231,13 @@ void LightNode::receivePacket(const Packet& p) {
 		break;
 
 		case Packet::NACK:
-			cout << "[Warning] LightNode::receivePacket: Received NACK (" << strip.getSize() << ")" << endl;
+			if(p.getPayload()[0] == static_cast<unsigned char>(Packet::UPDATE)) {
+				//NACKing an update is a fatal error
+				disconnect();
+			}
+			else {
+				cout << "[Warning] LightNode::receivePacket: Received NACK (" << strip.getSize() << ")" << endl;
+			}
 		break;
 
 		default:
