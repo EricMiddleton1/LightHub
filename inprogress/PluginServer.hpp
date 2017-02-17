@@ -12,48 +12,27 @@
 class PluginServer
 {
 public:
-	using EventHandler = std::function<void(std::shared_ptr<Effect>)>;
-	using ServiceHandler = std::function<void(std::shared_ptr<Service>)>;
+	using PluginHandler = std::function<void(std::shared_ptr<Plugin>)>;
 
 	enum ListenerType_e {
-		EFFECT_CONNECT,
-		EFFECT_DISCONNECT,
-
-		SERVICE_CONNECT,
-		SERVICE_DISCONNECT
+		CONNECT,
+		DISCONNECT
 	};
 
 
 	PluginServer(uint16_t port);
 	~PluginServer();
 	
-	std::vector<std::shared_ptr>::iterator effectBegin();
-	std::vector<std::shared_ptr>::iterator effectEnd();
-
-	std::vector<std::shared_ptr>::iterator serviceBegin();
-	std::vector<std::shared_ptr>::iterator serviceEnd();
-
-	size_t getEffectCount() const;
-	size_t getServiceCount() const;
-
-	
 	template<class EventHandler>
 	void addListener(ListenerType_e listenType, EventHandler slot) {
 		switch(listenType) {
-			case EFFECT_CONNECT:
-				sigEffectConnect.connect(slot);
+			case CONNECT:
+				sigConnect.connect(slot);
 			break;
 
-			case EFFECT_DISCONNECT:
-				sigEffectDisconnect.connect(slot);
+			case DISCONNECT:
+				sigDisconnect.connect(slot);
 			break;
-
-			case SERVICE_CONNECT:
-				sigServiceConnect.connect(slot);
-			break;
-
-			case SERVICE_DISCONNECT:
-				sigServiceDisconnect.connect(slot);
 		}
 	}
 
@@ -63,12 +42,10 @@ private:
 
 	
 	//Connected plugins
-	std::vector<Effect> effects;
-	std::vector<Service> services;
+	std::vector<Plugin> effects;
 
 	//Signals
-	boost::signals2::signal<EventHandler> sigEffectConnect, sigEffectDisconnect;
-	boost::signals2::signal<ServiceHandler> sigServiceConnect, sigServiceDisconnect;
+	boost::signals2::signal<PluginHandler> sigConnect, sigDisconnect;
 
 	//General boost stuff
 	boost::asio::io_service ioService;
@@ -79,9 +56,4 @@ private:
 
 	//Thread stuff
 	std::thread asyncThread;
-
-	
-	
-
-
 };
