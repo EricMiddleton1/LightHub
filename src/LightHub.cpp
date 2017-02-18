@@ -4,8 +4,7 @@ using namespace std;
 
 LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort, DiscoveryMethod_e _discoveryMethod,
 	uint32_t _discoveryPeriod)
-	:	sendSocket(ioService, boost::asio::ip::udp::endpoint(
-			boost::asio::ip::udp::v4(), _sendPort))
+	:	sendSocket(ioService, boost::asio::ip::udp::v4())
 	,	recvSocket(ioService, boost::asio::ip::udp::endpoint(
 			boost::asio::ip::udp::v4(), _recvPort))
 	,	discoveryTimer(ioService)	{
