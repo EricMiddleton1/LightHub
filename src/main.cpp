@@ -1,4 +1,13 @@
-#include "main.hpp"
+#include <thread>
+#include <chrono>
+#include <memory>
+#include <iostream>
+
+#include "Rhopalia.hpp"
+
+#include "LightEffectSoundSolid.hpp"
+#include "LightEffectSoundMove.hpp"
+#include "LightEffectMatrixEQ.hpp"
 
 #define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
@@ -6,17 +15,13 @@
 
 void slotNodeDiscover(std::shared_ptr<LightNode>);
 
-void slotNodeStateChange(LightNode*, LightNode::State_e, LightNode::State_e);
+void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
-//std::shared_ptr<LightEffectSoundSolid> effect;
-std::shared_ptr<LightEffectFade> effect;
+std::shared_ptr<LightEffectSoundSolid> analogEffect;
+std::shared_ptr<LightEffectSoundMove> digitalEffect;
+std::shared_ptr<LightEffectMatrixEQ> matrixEffect;
 
 int main() {
-
-
-	//Add the effect to the controller
-	//controller.addEffect(effectFade);
-/*	
 	//Create an audio device
 	std::shared_ptr<AudioDevice> audioDevice =
 		std::make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
@@ -29,38 +34,37 @@ int main() {
 	SoundColorSettings scs;
 	scs.bassFreq = 150.;
 	scs.trebbleFreq = 4000.;
-	scs.bassBoost = 10.;
+	scs.bassBoost = 15.;
 	scs.trebbleBoost = 0.;
 	scs.fStart = 0;
 	scs.fEnd = 20000;
-	scs.dbScaler = 700.;
+	scs.dbScaler = 200;
 	scs.dbFactor = 1;
 	scs.avgFactor = 0.2;
 	scs.noiseFloor = 60.;
 	scs.avgFilterStrength = 0.4;
 	scs.minSaturation = 0.7;
-	scs.filterStrength = 0.6;
+	scs.filterStrength = 0.7;
 	scs.centerSpread = 0.5;
 	scs.centerBehavior = SoundColorSettings::MONO;
 
 	//Create a SoundColor
-	//SoundColor soundColor(spectrumAnalyzer, scs);
+	SoundColor soundColor(spectrumAnalyzer, scs);
 
-	effect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
-*/
-	effect = std::make_shared<LightEffectFade>(1., 1.);
+	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
+	digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
+	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 
 	Rhopalia controller;
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
+	
+	controller.addEffect(analogEffect);
+	controller.addEffect(digitalEffect);
+	controller.addEffect(matrixEffect);
 
-	controller.addEffect(effect);
 	//Start the audio device
-	//audioDevice->startStream();
-
-
-
-
+	audioDevice->startStream();
 
 	//Everything is handled by other threads now
 	for(;;) {
@@ -72,20 +76,31 @@ int main() {
 }
 
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
-	node->addListener(LightNode::STATE_CHANGE, slotNodeStateChange);
+	node->addListener(LightNode::ListenerType::STATE_CHANGE, slotNodeStateChange);
 
 	size_t ledCount = node->getLightStrip().getSize();
 	node->releaseLightStrip();
 
 	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
-		<< node->getName() << "' of type '"<< node->getType()
+		<< node->getName() << "' of type '"<< static_cast<int>(node->getType())
 		<< "' with " << ledCount << " leds" << std::endl;
 	
-	effect->addNode(node);
+	if(node->getType() == LightNode::Type::ANALOG) {
+		analogEffect->addNode(node);
+	}
+	else if(node->getType() == LightNode::Type::DIGITAL) {
+		digitalEffect->addNode(node);
+	}
+	else if(node->getType() == LightNode::Type::MATRIX) {
+		matrixEffect->addNode(node);
+	}
+	else {
+		std::cout << "[Error] Node connected with unknown type" << std::endl;
+	}
 }
 
-void slotNodeStateChange(LightNode* node, LightNode::State_e,
-	LightNode::State_e newState) {
+void slotNodeStateChange(LightNode* node, LightNode::State,
+	LightNode::State newState) {
 
 	std::cout << "[Info] slotNodeStateChange: Node '" << node->getName()
 		<< "' state changed to " << LightNode::stateToString(newState)
