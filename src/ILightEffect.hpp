@@ -14,8 +14,10 @@ class ILightEffect
 {
 public:
 	static const uint16_t EXCEPTION_LIGHT_EFFECT_NODE_NOT_FOUND = 0x0020;
+	static const uint16_t EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE = 0x0021;
+	static const uint16_t EXCEPTION_LIGHT_EFFECT_NODE_ALREADY_CONNECTED = 0x0022;
 
-	ILightEffect();
+	ILightEffect(const std::vector<LightNode::Type>&);
 	virtual ~ILightEffect();
 
 	virtual void addNode(const std::shared_ptr<LightNode>&);
@@ -32,4 +34,5 @@ protected:
 	virtual void update() = 0;
 
 	std::vector<std::shared_ptr<LightNode>> nodes;
+	std::vector<LightNode::Type> supportedTypes;
 };

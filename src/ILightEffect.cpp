@@ -1,15 +1,25 @@
 #include "ILightEffect.hpp"
 
 
-ILightEffect::ILightEffect() {
+ILightEffect::ILightEffect(const std::vector<LightNode::Type>& _types)
+	:	supportedTypes(_types) {
 }
 
 ILightEffect::~ILightEffect() {
 }
 
 void ILightEffect::addNode(const std::shared_ptr<LightNode>& node) {
-	//TODO: Make sure that the node isn't already in the vector
-	
+	if(std::find(nodes.begin(), nodes.end(), node) != nodes.end()) {
+		throw Exception(EXCEPTION_LIGHT_EFFECT_NODE_ALREADY_CONNECTED,
+			"ILightEffect::addNode: Node already connected");
+	}
+
+	if(find(supportedTypes.begin(), supportedTypes.end(), node->getType())
+		== supportedTypes.end()) {
+		throw Exception(EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE,
+			"ILightEffect::addNode: Node type unsupported");
+	}
+
 	nodes.push_back(node);
 }
 
