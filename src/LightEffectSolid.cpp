@@ -1,19 +1,21 @@
 #include "LightEffectSolid.hpp"
 
 
-LightEffectSolid::LightEffectSolid() {
+LightEffectSolid::LightEffectSolid()
+	:	ILightEffect({LightNode::Type::ANALOG, LightNode::Type::DIGITAL}) {
 
 }
 
 LightEffectSolid::LightEffectSolid(const Color& initialColor)
-	:	color(initialColor) {
+	:	ILightEffect({LightNode::Type::ANALOG, LightNode::Type::DIGITAL})
+	,	color(initialColor) {
 }
 
 void LightEffectSolid::addNode(const std::shared_ptr<LightNode>& node) {
 	nodes.push_back(node);
 
 	//Add listener for state changes
-	node->addListener(LightNode::STATE_CHANGE,
+	node->addListener(LightNode::ListenerType::STATE_CHANGE,
 		std::bind(&LightEffectSolid::slotStateChange, this, std::placeholders::_1,
 		std::placeholders::_3));
 
@@ -53,9 +55,9 @@ void LightEffectSolid::update() {
 }
 
 void LightEffectSolid::slotStateChange(LightNode* node,
-	LightNode::State_e newState) {
+	LightNode::State newState) {
 
-	if(newState == LightNode::CONNECTED) {
+	if(newState == LightNode::State::CONNECTED) {
 		//Update the pixels
 		node->getLightStrip().setAll(color);
 

@@ -18,7 +18,7 @@ public:
 
 private:
 	virtual void update() override;
-	void slotStateChange(LightNode*, LightNode::State_e);
+	void slotStateChange(LightNode*, LightNode::State);
 
 	//single color for all attached lights
 	Color color;

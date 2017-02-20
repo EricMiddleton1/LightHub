@@ -4,7 +4,8 @@
 LightEffectSoundSolid::LightEffectSoundSolid(
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer,
 	const SoundColorSettings& settings)
-	:	soundColor(spectrumAnalyzer, settings) {
+	:	ILightEffect({LightNode::Type::ANALOG, LightNode::Type::DIGITAL})
+	,	soundColor(spectrumAnalyzer, settings) {
 	
 }
 

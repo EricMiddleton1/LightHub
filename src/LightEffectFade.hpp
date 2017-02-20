@@ -15,7 +15,7 @@ public:
 
 private:
 	virtual void update() override;
-	void slotStateChange(LightNode*, LightNode::State_e);
+	void slotStateChange(LightNode*, LightNode::State);
 
 	float brightness, speed, hue;
 

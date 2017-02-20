@@ -2,7 +2,8 @@
 
 
 LightEffectFade::LightEffectFade(float brightness, float speed)
-	:	brightness{brightness}
+	:	ILightEffect({LightNode::Type::ANALOG, LightNode::Type::DIGITAL})
+	,	brightness{brightness}
 	,	speed{speed}
 	,	hue{0.}{
 
@@ -12,7 +13,7 @@ void LightEffectFade::addNode(const std::shared_ptr<LightNode>& node) {
 	nodes.push_back(node);
 
 	//Add listener for state changes
-	node->addListener(LightNode::STATE_CHANGE,
+	node->addListener(LightNode::ListenerType::STATE_CHANGE,
 		std::bind(&LightEffectFade::slotStateChange, this, std::placeholders::_1,
 		std::placeholders::_3));
 
@@ -40,9 +41,9 @@ void LightEffectFade::update() {
 }
 
 void LightEffectFade::slotStateChange(LightNode* node,
-	LightNode::State_e newState) {
+	LightNode::State newState) {
 
-	if(newState == LightNode::CONNECTED) {
+	if(newState == LightNode::State::CONNECTED) {
 		//Update the pixels
 		node->getLightStrip().setAll(color);
 
