@@ -37,8 +37,6 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	,	spectrumAnalyzer{_spectrumAnalyzer}
 	,	hasChanged{false} {
 
-	std::cout << settings.toString() << std::endl;
-
 	//Get the spectrum to calculate the color vector
 	auto spectrum = spectrumAnalyzer->getLeftSpectrum();
 
@@ -70,8 +68,6 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 		Color c = Color::HSV(hue, 1., 1.);
 
 		frequencyColors.push_back(c);
-
-		std::cout << hue << ":\t" << c.toString() << '\n';
 	}
 
 	for(size_t i = bassBin; i < spectrum->getBinCount(); i++) {
@@ -81,11 +77,7 @@ SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 		Color c = Color::HSV(hue, 1., 1.);
 
 		frequencyColors.push_back(c);
-
-		std::cout << hue << ":\t" << c.toString() << '\n';
 	}
-
-	std::cout << std::endl;
 
 	//Initialize each color channel
 	left.avg = 0.;
@@ -124,9 +116,6 @@ void SoundColor::cbSpectrum(SpectrumAnalyzer*,
 	renderColor(left, *leftSpectrum.get());
 	//renderColor(right, *rightSpectrum.get());
 
-	std::cout << left.c.toString() << std::endl;
-
-
 	hasChanged = true;
 }
 
@@ -135,24 +124,19 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 	double r = 0., g = 0., b = 0.;
 	size_t binCount = spectrum.getBinCount();
 
-	//double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
+	double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
 
-	//if(curAvg < 0)
-		//curAvg = 0;
+	if(curAvg < 0)
+		curAvg = 0;
 
 	double absFloor = std::pow(10., -100);
 	double absBoost = std::pow(10., settings.bassBoost/20.);
-
-	cout << "[Info] Noise Floor: " << absFloor << '\n';
-	cout << "[Info] Bass Boost: " << absBoost << '\n';
-
+/*
 	double curAvg = spectrum.getAverageEnergy();
-
-	cout << "[Info] Average energy: " << curAvg << endl;
 
 	if(curAvg < absFloor)
 		curAvg = absFloor;
-	
+*/
 
 
 	//Loosely track the average DB
@@ -173,8 +157,8 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 
 
 	//Scale to be applied to each bin
-	//double scale = 1. / settings.dbScaler;
-	double scale = 500;
+	double scale = 1. / settings.dbScaler;
+	//double scale = 500;
 
 
 	for(unsigned int i = 0; i < binCount; ++i) {
@@ -191,43 +175,49 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 			double energy = bin.getEnergy();
 
 			//Bass boost
-			//if(f <= settings.bassFreq)
-				//db += settings.bassBoost;
+			if(f <= settings.bassFreq)
+			db += settings.bassBoost;
 
 			//Trebble boost
-			//if(f >= settings.trebbleFreq)
-				//db += settings.trebbleBoost;
-
+			if(f >= settings.trebbleFreq)
+				db += settings.trebbleBoost;
+/*
 			if(f <= settings.bassFreq)
 				energy *= absBoost;
 
 			energy -= prevColor.avg;
 			if(energy < 0)
 				energy = 0;
-
+*/
 			//Raise by noise floor, subtract loosly-tracking average
-			//db += settings.noiseFloor;// - prevColor.avg;
+			db += settings.noiseFloor - prevColor.avg;
 
 			//Reject anything below the average
-			//if(db <= prevColor.avg)
-				//continue;
+			if(db < 0)
+				continue;
 
 			//Scale partially based on average level
-			//db *= settings.dbFactor;
-			//db += settings.avgFactor*prevColor.avg;
+			db *= settings.dbFactor;
+			db += settings.avgFactor*prevColor.avg;
 
+			r += db * c.getRed();
+			g += db * c.getGreen();
+			b += db * c.getBlue();
+/*
 			//Add weighted color to running color average
 			r += energy * c.getRed();
 			g += energy * c.getGreen();
 			b += energy * c.getBlue();
+*/
 		}
 	}
 
 	//Scale color
-	r *= r*scale;
-	g *= g*scale;
-	b *= b*scale;
+	r *= scale;
+	g *= scale;
+	b *= scale;
 
+/*
 	//Convert to DB
 	r = 20.*std::log10(r);
 	if(r < 0)
@@ -238,7 +228,8 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 	b = 20.*std::log10(b);
 	if(b < 0)
 		b = 0;
-	
+*/
+
 	//Compute largest component
 	double largest = std::max(r, std::max(g, b));
 
@@ -250,9 +241,6 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 		g *= scale;
 		b *= scale;
 	}
-
-	//std::cout << r << ' ' << g << ' ' << b << std::endl;
-	//std::printf("%3d %3d %3d\n", (int)r, (int)g, (int)b);
 
 	Color c(r, g, b);
 	double h = c.getHue(), s = c.getHSVSaturation(), v = c.getValue();
