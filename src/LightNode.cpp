@@ -2,12 +2,14 @@
 
 using namespace std;
 
-LightNode::LightNode(const string& _name, Type_e _type, uint16_t _ledCount,
+LightNode::LightNode(const string& _name, Type _type, uint16_t _ledCount,
 	const boost::asio::ip::address& addr, uint16_t sendPort)
 		:	name(_name)
 		,	type{_type}
-		,	strip{_ledCount}
-		,	pixelCount{_ledCount}
+		,	width{(_type == Type::MATRIX) ? (_ledCount >> 8) : _ledCount}
+		,	height{(_type == Type::MATRIX) ? (_ledCount & 0xFF) : 1}
+		,	ledCount{width * height}
+		,	strip{ledCount}
 		,	isDirty{true}
 		,	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
@@ -15,7 +17,7 @@ LightNode::LightNode(const string& _name, Type_e _type, uint16_t _ledCount,
 		,	watchdogTimer(ioService)
 		,	sendTimer(ioService)
 		,	connectRetryCount{0}
-		,	state{CONNECTING} {
+		,	state{State::CONNECTING} {
 
 	ioService.reset();
 
@@ -40,11 +42,11 @@ LightNode::~LightNode() {
 	asyncThread.join();
 }
 
-void LightNode::addListener(ListenerType_e listenType,
-	std::function<void(LightNode*, State_e, State_e)> slot) {
+void LightNode::addListener(ListenerType listenType,
+	std::function<void(LightNode*, State, State)> slot) {
 
 	//This is currently the only signal type
-	if(listenType == STATE_CHANGE) {
+	if(listenType == ListenerType::STATE_CHANGE) {
 		sigStateChange.connect(slot);
 	}
 	else {
@@ -66,7 +68,7 @@ void LightNode::cbConnectTimer(const boost::system::error_code& error) {
 
 	connectRetryCount++;
 	if(connectRetryCount > PACKET_RETRY_COUNT) {
-		changeState(DISCONNECTED);
+		changeState(State::DISCONNECTED);
 	}
 	else {
 		sendPacket(Packet::Init());
@@ -79,7 +81,7 @@ void LightNode::cbSendTimer(const boost::system::error_code& error) {
 		return;
 	}
 	
-	if(state == CONNECTED) {
+	if(state == State::CONNECTED) {
 		//Send an alive packet so node doesn't disconnect
 		sendPacket(Packet::Alive());
 	}
@@ -91,7 +93,7 @@ void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
 	}
 
 	//The watchdog timer expired, state is now DISCONNECTED
-	changeState(DISCONNECTED);
+	changeState(State::DISCONNECTED);
 }
 
 void LightNode::cbSendPacket(uint8_t *buffer, const boost::system::error_code& error, size_t) {
@@ -106,23 +108,23 @@ void LightNode::cbSendPacket(uint8_t *buffer, const boost::system::error_code& e
 	delete[] buffer;
 }
 
-void LightNode::changeState(State_e newState) {
+void LightNode::changeState(State newState) {
 	if(state == newState) {
 		return;
 	}
 
-	State_e oldState = state;
+	State oldState = state;
 	state = newState;
 
 	//If now CONNECTED, start watchdog and send timers
-	if(newState == CONNECTED) {
+	if(newState == State::CONNECTED) {
 		feedWatchdog();
 		resetSendTimer();
 
 		//Indicate that an update is needed
 		isDirty = true;
 	}
-	else if(newState == CONNECTING) {
+	else if(newState == State::CONNECTING) {
 		connect();
 	}
 
@@ -156,14 +158,14 @@ void LightNode::setConnectTimer() {
 }
 
 void LightNode::connect() {
-	if(state == CONNECTED)
+	if(state == State::CONNECTED)
 		return;
 
 	connectRetryCount = 0;
 
 	sendPacket(Packet::Init());
 
-	changeState(CONNECTING);
+	changeState(State::CONNECTING);
 	setConnectTimer();
 }
 
@@ -181,16 +183,16 @@ void LightNode::sendPacket(const Packet& p) {
 		std::bind(&LightNode::cbSendPacket, this, buffer, std::placeholders::_1,
 		std::placeholders::_2));
 
-	if(state == CONNECTED) {
+	if(state == State::CONNECTED) {
 		resetSendTimer();
 	}
 }
 
 void LightNode::disconnect() {
-	changeState(DISCONNECTED);
+	changeState(State::DISCONNECTED);
 }
 
-LightNode::State_e LightNode::getState() const {
+LightNode::State LightNode::getState() const {
 	return state;
 }
 
@@ -198,7 +200,7 @@ string LightNode::getName() const {
 	return name;
 }
 
-LightNode::Type_e LightNode::getType() const {
+LightNode::Type LightNode::getType() const {
 	return type;
 }
 
@@ -209,20 +211,20 @@ boost::asio::ip::address LightNode::getAddress() const {
 void LightNode::receivePacket(const Packet& p) {
 	switch(p.getID()) {
 		case Packet::INFO:
-			if(state == DISCONNECTED) {
+			if(state == State::DISCONNECTED) {
 
-				changeState(CONNECTING);
+				changeState(State::CONNECTING);
 			}
 		break;
 
 		case Packet::ALIVE:
 		case Packet::ACK:
-			if(state == CONNECTING) {
+			if(state == State::CONNECTING) {
 				connectTimer.cancel();
 			}
 
-			if(state != CONNECTED) {
-				changeState(CONNECTED);
+			if(state != State::CONNECTED) {
+				changeState(State::CONNECTED);
 
 			}
 			else {
@@ -260,9 +262,17 @@ void LightNode::releaseLightStrip(bool _isDirty) {
 	isDirty = _isDirty;
 }
 
+uint16_t LightNode::getWidth() const {
+	return width;
+}
+
+uint16_t LightNode::getHeight() const {
+	return height;
+}
+
 bool LightNode::update() {
 	//Make sure the node is connected AND needs to be updated
-	if(state != CONNECTED || !isDirty)
+	if(state != State::CONNECTED || !isDirty)
 		return false;
 
 	Packet p;
@@ -281,19 +291,19 @@ bool LightNode::update() {
 	return true;
 }
 
-string LightNode::stateToString(State_e state) {
+string LightNode::stateToString(State state) {
 	string str;
 
 	switch(state) {
-		case DISCONNECTED:
+		case State::DISCONNECTED:
 			str = "disconnected";
 		break;
 
-		case CONNECTING:
+		case State::CONNECTING:
 			str = "connecting";
 		break;
 
-		case CONNECTED:
+		case State::CONNECTED:
 			str = "connected";
 		break;
 

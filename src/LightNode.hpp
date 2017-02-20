@@ -22,44 +22,47 @@ class LightHub;
 class LightNode
 {
 public:
-	enum Type_e {
+	enum class Type {
 		ANALOG = 0,
 		DIGITAL,
 		MATRIX
 	};
 
-	enum State_e {
+	enum class State {
 		DISCONNECTED = 0,
 		CONNECTING,
 		CONNECTED
 	};
 
-	enum ListenerType_e {
+	enum class ListenerType {
 		STATE_CHANGE
 	};
 
-	LightNode(const std::string& name, Type_e type, uint16_t ledCount, 
+	LightNode(const std::string& name, Type type, uint16_t ledCount, 
 		const boost::asio::ip::address& addr, uint16_t sendPort);
 	
 	~LightNode();
 
-	void addListener(ListenerType_e,
-		std::function<void(LightNode*, State_e, State_e)>);
+	void addListener(ListenerType,
+		std::function<void(LightNode*, State, State)>);
 
 	void connect();
 	void disconnect();
 
-	State_e getState() const;
+	State getState() const;
 
 	std::string getName() const;
-	Type_e getType() const;
+	Type getType() const;
 
 	boost::asio::ip::address getAddress() const;
 
 	LightStrip& getLightStrip();
 	void releaseLightStrip(bool isDirty = true);
 
-	static std::string stateToString(State_e state);
+	uint16_t getWidth() const;
+	uint16_t getHeight() const;
+
+	static std::string stateToString(State state);
 
 private:
 	static const int CONNECT_TIMEOUT = 1000;
@@ -84,7 +87,7 @@ private:
 	void cbSendPacket(uint8_t *buffer, const boost::system::error_code& error,
 		size_t bytesTransferred);
 
-	void changeState(State_e newState);
+	void changeState(State newState);
 
 	void resetSendTimer();
 	void feedWatchdog();
@@ -92,14 +95,14 @@ private:
 
 	//Remote strip information
 	std::string name;
-	Type_e type;
+	Type type;
+	uint16_t width, height, ledCount;
 	LightStrip strip;
-	uint16_t pixelCount;
 	std::mutex stripMutex;
 	bool isDirty; //Indicates that the node needs to be updated
 
 	//Signals
-	boost::signals2::signal<void(LightNode*, State_e, State_e)> sigStateChange;
+	boost::signals2::signal<void(LightNode*, State, State)> sigStateChange;
 
 	//Network stuff
 	boost::asio::io_service ioService;
@@ -117,5 +120,5 @@ private:
 	std::unique_ptr<boost::asio::io_service::work> workPtr;
 	std::thread asyncThread;
 
-	State_e state;
+	State state;
 };

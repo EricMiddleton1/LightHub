@@ -137,7 +137,7 @@ size_t LightHub::getConnectedNodeCount() const {
 	size_t connectedCount = 0;
 
 	for(auto& node : nodes) {
-		connectedCount += node->getState() == LightNode::CONNECTED;
+		connectedCount += node->getState() == LightNode::State::CONNECTED;
 	}
 
 	return connectedCount;
@@ -222,7 +222,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 					//TODO: Give the new node a unique name
 					//TODO: Have the node send its set name along with other parameters
 					std::string name = receiveEndpoint.address().to_string();
-					LightNode::Type_e type = static_cast<LightNode::Type_e>(p.getPayload()[0]);
+					LightNode::Type type = static_cast<LightNode::Type>(p.getPayload()[0]);
 					uint16_t ledCount = (p.getPayload()[1] << 8) | (p.getPayload()[2]);
 					
 					auto newNode = std::make_shared<LightNode>(name, type, ledCount,
@@ -235,7 +235,8 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 					sigNodeDiscover(newNode);
 				}
 				else {
-					cout << "[Warning] Received packet from unconnected device with ID " << p.getID() << endl;
+					cout << "[Warning] Received packet from unconnected device with ID "
+						<< p.getID() << endl;
 				}
 			}
 			else {
