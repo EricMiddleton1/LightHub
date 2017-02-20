@@ -1,18 +1,19 @@
 #pragma once
 
+#include <memory>
+
 #include "ILightEffect.hpp"
 #include "Color.hpp"
-#include "SoundColor.hpp"
+#include "SpectrumAnalyzer.hpp"
 
 class LightEffectSoundMove : public ILightEffect
 {
 public:
-	LightEffectSoundMove(std::shared_ptr<SpectrumAnalyzer>,
-		const SoundColorSettings&);
+	LightEffectSoundMove(std::shared_ptr<SpectrumAnalyzer>);
 	~LightEffectSoundMove();
 
 private:
 	virtual void update() override;
 
-	SoundColor soundColor;
+	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 };
