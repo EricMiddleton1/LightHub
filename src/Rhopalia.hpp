@@ -43,6 +43,9 @@ public:
 
 	void addEffect(const std::shared_ptr<ILightEffect>&);
 
+	std::vector<std::shared_ptr<LightNode>>::iterator nodeBegin();
+	std::vector<std::shared_ptr<LightNode>>::iterator nodeEnd();
+
 
 private:
 	//TODO: Read these values from a config file

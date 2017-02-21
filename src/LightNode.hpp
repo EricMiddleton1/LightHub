@@ -49,13 +49,16 @@ public:
 	void connect();
 	void disconnect();
 
+	void WiFiConnect(const std::string& ssid, const std::string& psk);
+	void WiFiStartAP(const std::string& ssid, const std::string& psk);
+
 	State getState() const;
 
 	std::string getName() const;
 	Type getType() const;
 
 	boost::asio::ip::address getAddress() const;
-
+	
 	LightStrip& getLightStrip();
 	void releaseLightStrip(bool isDirty = true);
 

@@ -21,6 +21,8 @@ std::shared_ptr<LightEffectSoundSolid> analogEffect;
 std::shared_ptr<LightEffectSoundMove> digitalEffect;
 std::shared_ptr<LightEffectMatrixEQ> matrixEffect;
 
+void printNodes(Rhopalia&);
+
 int main() {
 	//Create an audio device
 	std::shared_ptr<AudioDevice> audioDevice =
@@ -68,8 +70,61 @@ int main() {
 
 	//Everything is handled by other threads now
 	for(;;) {
-		//Delay 1 second
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		std::cout << ">";
+
+		std::string input;
+		std::cin >> input;
+
+		if(input == "help") {
+			std::cout << "Commands:\n"
+				"nodes - List nodes\n"
+				"wificonnect - Connect to WiFi station on node\n"
+				"wifistartap - Start WiFi AP on node\n"
+				<< std::endl;
+		}
+		else if(input == "nodes") {
+			printNodes(controller);
+		}
+		else if(input == "wificonnect") {
+			printNodes(controller);
+
+			int index = 0;
+			std::string ssid, psk;
+
+			std::cout << "Node Index: ";
+			std::cin >> index;
+			std::cout << "SSID: ";
+			std::cin >> ssid;
+			std::cout << "PSK: ";
+			std::cin >> psk;
+
+			//TODO: check bounds
+			auto node = *(controller.nodeBegin() + index);
+
+			node->WiFiConnect(ssid, psk);
+		}
+		else if(input == "wifistartap") {
+			printNodes(controller);
+
+			int index = 0;
+			std::string ssid, psk;
+
+			std::cout << "Node Index: ";
+			std::cin >> index;
+			std::cout << "SSID: ";
+			std::cin >> ssid;
+			std::cout << "PSK: ";
+			std::cin >> psk;
+
+			//TODO: check bounds
+			auto node = *(controller.nodeBegin() + index);
+
+			node->WiFiStartAP(ssid, psk);
+		}
+		else {
+			std::cout << "[Error] Unsupported operation '" << input << "'"
+				<< std::endl;
+		}
 	}
 
 	return 0;
@@ -105,4 +160,12 @@ void slotNodeStateChange(LightNode* node, LightNode::State,
 	std::cout << "[Info] slotNodeStateChange: Node '" << node->getName()
 		<< "' state changed to " << LightNode::stateToString(newState)
 		<< std::endl;
+}
+
+void printNodes(Rhopalia& controller) {
+	int i = 0;
+	std::for_each(controller.nodeBegin(), controller.nodeEnd(),
+		[&i](std::shared_ptr<LightNode> node) {
+			std::cout << "[" << i++ << "]\t" << node->getName() << std::endl;
+		});
 }

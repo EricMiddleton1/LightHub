@@ -23,6 +23,15 @@ void Rhopalia::addEffect(const std::shared_ptr<ILightEffect>& effect) {
 	effects.push_back(effect);
 }
 
+std::vector<std::shared_ptr<LightNode>>::iterator Rhopalia::nodeBegin() {
+	return hub.begin();
+}
+
+std::vector<std::shared_ptr<LightNode>>::iterator Rhopalia::nodeEnd() {
+	return hub.end();
+}
+
+
 void Rhopalia::threadRoutine() {
 	ioService.run();
 }

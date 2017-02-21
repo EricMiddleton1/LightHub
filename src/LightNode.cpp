@@ -192,6 +192,14 @@ void LightNode::disconnect() {
 	changeState(State::DISCONNECTED);
 }
 
+void LightNode::WiFiConnect(const std::string& ssid, const std::string& psk) {
+	sendPacket(Packet::WiFiConnect(ssid, psk));
+}
+
+void LightNode::WiFiStartAP(const std::string& ssid, const std::string& psk) {
+	sendPacket(Packet::WiFiStartAP(ssid, psk));
+}
+
 LightNode::State LightNode::getState() const {
 	return state;
 }

@@ -18,6 +18,9 @@ public:
 		INFO = 0x02,
 		UPDATE = 0x03,
 		ALIVE = 0x04,
+
+		WIFI_CONNECT = 0x14,
+		WIFI_START_AP = 0x15,
 		
 		ACK = 0xFE,
 		NACK = 0xFF
@@ -46,6 +49,9 @@ public:
 	static Packet Alive();
 	static Packet Ack();
 	static Packet Nack();
+
+	static Packet WiFiConnect(const std::string& ssid, const std::string& psk);
+	static Packet WiFiStartAP(const std::string& ssid, const std::string& psk);
 
 private:
 	const static uint16_t HEADER_VALUE = 0xAA55;

@@ -125,3 +125,35 @@ Packet Packet::Ack() {
 Packet Packet::Nack() {
 	return Packet(NACK, std::vector<uint8_t>());
 }
+
+Packet Packet::WiFiConnect(const std::string& ssid, const std::string& psk) {
+	std::vector<uint8_t> payload;
+
+	for(auto& c : ssid) {
+		payload.push_back(c);
+	}
+	payload.push_back(0);
+
+	for(auto& c : psk) {
+		payload.push_back(c);
+	}
+	payload.push_back(0);
+	
+	return Packet(WIFI_CONNECT, payload);
+}
+
+Packet Packet::WiFiStartAP(const std::string& ssid, const std::string& psk) {
+	std::vector<uint8_t> payload;
+
+	for(auto& c : ssid) {
+		payload.push_back(c);
+	}
+	payload.push_back(0);
+
+	for(auto& c : psk) {
+		payload.push_back(c);
+	}
+	payload.push_back(0);
+	
+	return Packet(WIFI_START_AP, payload);
+}
