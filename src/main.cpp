@@ -89,14 +89,20 @@ int main() {
 			printNodes(controller);
 
 			int index = 0;
-			std::string ssid, psk;
+			std::string ssid, psk, sec;
 
 			std::cout << "Node Index: ";
 			std::cin >> index;
 			std::cout << "SSID: ";
 			std::cin >> ssid;
-			std::cout << "PSK: ";
-			std::cin >> psk;
+			std::cout << "Does AP require a password (y/n): ";
+			std::cin >> sec;
+
+			if(sec == "y") {
+				std::cout << "PSK: ";
+				std::cin >> psk;
+			}
+
 
 			//TODO: check bounds
 			auto node = *(controller.nodeBegin() + index);
