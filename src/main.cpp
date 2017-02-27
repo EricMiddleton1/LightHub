@@ -8,6 +8,7 @@
 #include "LightEffectSoundSolid.hpp"
 #include "LightEffectSoundMove.hpp"
 #include "LightEffectMatrixEQ.hpp"
+#include "LightEffectStripEQ.hpp"
 
 #define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
@@ -17,9 +18,9 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
-std::shared_ptr<LightEffectSoundSolid> analogEffect;
-std::shared_ptr<LightEffectSoundMove> digitalEffect;
-std::shared_ptr<LightEffectMatrixEQ> matrixEffect;
+std::shared_ptr<ILightEffect> analogEffect;
+std::shared_ptr<ILightEffect> digitalEffect;
+std::shared_ptr<ILightEffect> matrixEffect;
 
 void printNodes(Rhopalia&);
 
@@ -54,7 +55,8 @@ int main() {
 	SoundColor soundColor(spectrumAnalyzer, scs);
 
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
-	digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
+	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
+	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer, 27);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 
 	Rhopalia controller;

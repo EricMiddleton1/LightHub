@@ -38,7 +38,7 @@ void LightEffectMatrixEQ::update() {
 
 		for(int i = 0; i < width; ++i) {
 			int specStart = i*leftSpec->getBinCount() / width,
-				specEnd = (i+1)*leftSpec->getBinCount() / width - 1;
+				specEnd = (i+1)*leftSpec->getBinCount() / width;
 
 			double db = 0;
 			for(int j = specStart; j < specEnd; ++j) {
