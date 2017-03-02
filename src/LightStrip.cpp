@@ -1,5 +1,7 @@
 #include "LightStrip.hpp"
 
+#include <string>
+
 LightStrip::LightStrip() {
 }
 
@@ -21,7 +23,7 @@ Color LightStrip::getPixel(int i) {
 void LightStrip::setPixel(int i, const Color& c) {
 	if(i < 0 || i >= (int)pixels.size()) {
 		throw Exception(LIGHTSTRIP_INVALID_INDEX,
-			"[LightStrip::setPixel]Error: invalid index");
+			"[LightStrip::setPixel]Error: invalid index (" + std::to_string(i) + ")");
 	}
 
 	pixels[i] = c;

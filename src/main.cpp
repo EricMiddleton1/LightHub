@@ -9,6 +9,7 @@
 #include "LightEffectSoundMove.hpp"
 #include "LightEffectMatrixEQ.hpp"
 #include "LightEffectStripEQ.hpp"
+#include "LightEffectStripStEQ.hpp"
 
 #define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
@@ -56,7 +57,7 @@ int main() {
 
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
 	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
-	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer, 27);
+	digitalEffect = std::make_shared<LightEffectStripStEQ>(spectrumAnalyzer, 30);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 
 	Rhopalia controller;

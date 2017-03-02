@@ -45,8 +45,10 @@ void LightEffectMatrixEQ::update() {
 				db += leftSpec->getByIndex(j).getEnergyDB();
 			}
 			db = (db/(specEnd - specStart) + 50) * 1.3;
-			if(i < 2)
-				db += 10;
+			
+			if(leftSpec->getByIndex(specStart).getFreqEnd() < 150.)
+				db += 6;
+			
 			if(db < 0.)
 				db = 0.;
 			

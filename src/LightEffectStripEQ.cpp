@@ -32,7 +32,7 @@ void LightEffectStripEQ::removeNode(std::shared_ptr<LightNode> node) {
 }
 
 void LightEffectStripEQ::update() {
-	auto leftSpec = spectrumAnalyzer->getLeftSpectrum();
+	auto leftSpec = spectrumAnalyzer->getRightSpectrum();
 
 	for(auto& node : nodes) {
 		auto& heights = values.at(node);
@@ -56,8 +56,8 @@ void LightEffectStripEQ::update() {
 				}
 			}
 			if(count > 0) {
-				db = (db/count + 50);
-				if(i < 2)
+				db = (db/count + 60);
+				if(leftSpec->getByIndex(i).getFreqStart() <= 150)
 					db += 10;
 				if(db < 0.)
 					db = 0.;
@@ -66,7 +66,7 @@ void LightEffectStripEQ::update() {
 				db = 0.;
 			}
 			
-			double top = db / 50;
+			double top = db / 60;
 			if(top > 1.)
 				top = 1.;
 			

@@ -114,9 +114,9 @@ void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
 	//std::unique_lock<std::mutex> bufferLock(bufferMutex);
 
 	//Shift the samples forward by 1 chunk size
-	std::memcpy(leftBuffer.data(), &leftBuffer[chunkSize],
+	std::memmove(leftBuffer.data(), &leftBuffer[chunkSize],
 		sizeof(int16_t) * (blockSize - chunkSize));
-	std::memcpy(rightBuffer.data(), &rightBuffer[chunkSize],
+	std::memmove(rightBuffer.data(), &rightBuffer[chunkSize],
 		sizeof(int16_t) * (blockSize - chunkSize));
 
 	//Copy the new chunk samples into the end of the block
@@ -181,7 +181,7 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 	//Now do right FFT
 	//Copy real audio data into complex fft input array and scale to [-1., 1.]
 	for(unsigned int i = 0; i < blockSize; i++) {
-		fftIn[i][0] = fftWindow[i] * ((double)right[i] / INT16_MAX); //Real
+		fftIn[i][0] = fftWindow[i] * ((double)right[i] / INT16_MAX / blockSize); //Real
 		fftIn[i][1] = 0.; //Imaginary
 	}
 
