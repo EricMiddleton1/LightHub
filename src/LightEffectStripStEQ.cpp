@@ -5,10 +5,9 @@
 #include <algorithm>
 
 LightEffectStripStEQ::LightEffectStripStEQ(
-	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, size_t _maxBins)
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
 	:	ILightEffect({LightNode::Type::DIGITAL})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
-	,	maxBins{_maxBins}
 	,	leftAvgEnergy{0.}
 	,	rightAvgEnergy{0.} {
 	
@@ -21,7 +20,7 @@ LightEffectStripStEQ::~LightEffectStripStEQ() {
 void LightEffectStripStEQ::addNode(const std::shared_ptr<LightNode>& node) {
 	ILightEffect::addNode(node);
 
-	size_t binCount = std::min((size_t)node->getWidth(), maxBins);
+	size_t binCount = (size_t)node->getWidth();
 
 	leftValues.insert({node, std::vector<double>(binCount/2)});
 	rightValues.insert({node, std::vector<double>(binCount/2)});
@@ -37,6 +36,8 @@ void LightEffectStripStEQ::removeNode(std::shared_ptr<LightNode> node) {
 void LightEffectStripStEQ::update() {
 	auto leftSpec = spectrumAnalyzer->getLeftSpectrum();
 	auto rightSpec = spectrumAnalyzer->getRightSpectrum();
+
+	size_t maxBins = leftSpec->getBinCount();
 
 	for(auto& node : nodes) {
 		auto& leftHeights = leftValues.at(node);

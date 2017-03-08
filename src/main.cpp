@@ -57,7 +57,7 @@ int main() {
 
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
 	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
-	digitalEffect = std::make_shared<LightEffectStripStEQ>(spectrumAnalyzer, 30);
+	digitalEffect = std::make_shared<LightEffectStripStEQ>(spectrumAnalyzer);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 
 	Rhopalia controller;
