@@ -22,12 +22,6 @@ class LightHub;
 class LightNode
 {
 public:
-	enum class Type {
-		ANALOG = 0,
-		DIGITAL,
-		MATRIX
-	};
-
 	enum class State {
 		DISCONNECTED = 0,
 		CONNECTING,
@@ -38,7 +32,7 @@ public:
 		STATE_CHANGE
 	};
 
-	LightNode(const std::string& name, Type type, uint16_t ledCount, 
+	LightNode(const std::string& name, const std::vector<std::shared_ptr<LightStrip>>&,
 		const boost::asio::ip::address& addr, uint16_t sendPort);
 	
 	~LightNode();
@@ -55,16 +49,9 @@ public:
 	State getState() const;
 
 	std::string getName() const;
-	Type getType() const;
 
 	boost::asio::ip::address getAddress() const;
 	
-	LightStrip& getLightStrip();
-	void releaseLightStrip(bool isDirty = true);
-
-	uint16_t getWidth() const;
-	uint16_t getHeight() const;
-
 	static std::string stateToString(State state);
 
 private:
@@ -96,13 +83,9 @@ private:
 	void feedWatchdog();
 	void setConnectTimer();
 
-	//Remote strip information
+	//Remote node information
 	std::string name;
-	Type type;
-	uint16_t width, height, ledCount;
-	LightStrip strip;
-	std::mutex stripMutex;
-	bool isDirty; //Indicates that the node needs to be updated
+	std::vector<std::shared_ptr<LightStrip>> strips;
 
 	//Signals
 	boost::signals2::signal<void(LightNode*, State, State)> sigStateChange;

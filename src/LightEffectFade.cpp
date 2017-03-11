@@ -2,52 +2,18 @@
 
 
 LightEffectFade::LightEffectFade(float brightness, float speed)
-	:	ILightEffect({LightNode::Type::ANALOG, LightNode::Type::DIGITAL})
+	:	ILightEffect({LightStrip::Type::Analog, LightStrip::Type::Digital})
 	,	brightness{brightness}
 	,	speed{speed}
 	,	hue{0.}{
 
 }
 
-void LightEffectFade::addNode(const std::shared_ptr<LightNode>& node) {
-	nodes.push_back(node);
-
-	//Add listener for state changes
-	node->addListener(LightNode::ListenerType::STATE_CHANGE,
-		std::bind(&LightEffectFade::slotStateChange, this, std::placeholders::_1,
-		std::placeholders::_3));
-
-	//set the node's color
-	node->getLightStrip().setAll(color);
-
-	std::cout << "[Info] LightEffectSolid::addNode: Setting new node '"
-		<< node->getName() << "' to color " << color.toString() << std::endl;
-
-	//Release the strip
-	node->releaseLightStrip();
-}
-
-void LightEffectFade::update() {
+void LightEffectFade::tick() {
 	hue = std::fmod(hue + speed, 360.f);
-	color = Color::HSV(hue, 1.f, brightness);
-
-	//Update all of the nodes
-	for(auto& node : nodes) {
-		node->getLightStrip().setAll(color);
-		
-		//Release the light strip resource
-		node->releaseLightStrip();
-	}
 }
 
-void LightEffectFade::slotStateChange(LightNode* node,
-	LightNode::State newState) {
-
-	if(newState == LightNode::State::CONNECTED) {
-		//Update the pixels
-		node->getLightStrip().setAll(color);
-
-		//Release the strip
-		node->releaseLightStrip();
-	}
+void LightEffectFade::updateStrip(std::shared_ptr<LightStrip> strip) {
+	auto buffer = strip->getBuffer();
+	buffer->setAll(Color::HSV(hue, 1.f, brightness));
 }

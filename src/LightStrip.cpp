@@ -2,43 +2,66 @@
 
 #include <string>
 
-LightStrip::LightStrip() {
+size_t LightStrip::globalCount = 0;
+
+LightBuffer::LightBuffer(LightStrip *_strip)
+	:	strip(_strip) {
+	
+	strip->bufferMutex.lock();
 }
 
-LightStrip::LightStrip(int size) {
-	for(int i = 0; i < size; i++) {
-		pixels.push_back(Color());
-	}
+LightBuffer::~LightBuffer() {
+	std::unique_lock<std::mutex> pixelLock(strip->pixelMutex);
+
+	strip->pixels = strip->pixelBuffer;
+
+	strip->bufferMutex.unlock();
 }
 
-Color LightStrip::getPixel(int i) {
-	if(i < 0 || i >= (int)pixels.size()) {
-		throw Exception(LIGHTSTRIP_INVALID_INDEX,
-			"[LightStrip::getPixel]Error: invalid index");
-	}
-
-	return pixels[i];
+LightStrip::Type LightBuffer::getType() const {
+	return strip->type;
 }
 
-void LightStrip::setPixel(int i, const Color& c) {
-	if(i < 0 || i >= (int)pixels.size()) {
-		throw Exception(LIGHTSTRIP_INVALID_INDEX,
-			"[LightStrip::setPixel]Error: invalid index (" + std::to_string(i) + ")");
-	}
-
-	pixels[i] = c;
-}
-
-void LightStrip::setAll(const Color& c) {
-	for(auto& pixel : pixels) {
+void LightBuffer::setAll(const Color& c) {
+	for(auto& pixel : strip->pixelBuffer) {
 		pixel = c;
 	}
 }
 
-std::vector<Color>& LightStrip::getPixels() {
+std::vector<Color>& LightBuffer::getPixelBuffer() {
+	return strip->pixelBuffer;
+}
+
+const std::vector<Color>& LightBuffer::getPixelBufferConst() const {
+	return strip->pixelBuffer;
+}
+
+LightStrip::LightStrip(Type _type, size_t _size)
+	:	type{_type}
+	,	pixels{_size}
+	,	pixelBuffer{_size} {
+
+	std::unique_lock<std::mutex> countLock(countMutex);
+
+	id = globalCount++;
+}
+
+size_t LightStrip::getID() const {
+	return id;
+}
+
+LightStrip::Type LightStrip::getType() const {
+	return type;
+}
+
+std::vector<Color> LightStrip::getPixels() const {
+	std::unique_lock<std::mutex> pixelLock(pixelMutex);
+
 	return pixels;
 }
 
-int LightStrip::getSize() {
+size_t LightStrip::getSize() const {
+	std::unique_lock<std::mutex> pixelLock(pixelMutex);
+
 	return pixels.size();
 }

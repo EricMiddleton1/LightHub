@@ -1,53 +1,86 @@
 #include "ILightEffect.hpp"
 
 
-ILightEffect::ILightEffect(const std::vector<LightNode::Type>& _types)
+ILightEffect::ILightEffect(const std::vector<LightStrip::Type>& _types)
 	:	supportedTypes(_types) {
 }
 
 ILightEffect::~ILightEffect() {
 }
 
-void ILightEffect::addNode(const std::shared_ptr<LightNode>& node) {
-	if(std::find(nodes.begin(), nodes.end(), node) != nodes.end()) {
-		throw Exception(EXCEPTION_LIGHT_EFFECT_NODE_ALREADY_CONNECTED,
-			"ILightEffect::addNode: Node already connected");
+void ILightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
+	std::unique_lock<std::mutex> stripsLock(stripsMutex);
+	
+	auto id = strip->getID();
+
+	if(std::find_if(strips.begin(), strips.end(),
+		[id](const auto& pair) {
+			return pair.first == id;
+		}) != strips.end()) {
+		throw Exception(EXCEPTION_LIGHT_EFFECT_STRIP_ALREADY_CONNECTED,
+			"ILightEffect::addStrip: Strip already connected");
 	}
 
-	if(find(supportedTypes.begin(), supportedTypes.end(), node->getType())
+	if(find(supportedTypes.begin(), supportedTypes.end(), strip->getType())
 		== supportedTypes.end()) {
 		throw Exception(EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE,
-			"ILightEffect::addNode: Node type unsupported");
+			"ILightEffect::addStrip: Strip type unsupported");
 	}
+	
+	auto pair = std::pair<size_t, std::weak_ptr<LightStrip>>(id, strip);
 
-	nodes.push_back(node);
+	strips.push_back(pair);
+
+	if(onAdd) {
+		onAdd(pair);
+	}
 }
 
-void ILightEffect::removeNode(std::shared_ptr<LightNode> node) {
+void ILightEffect::removeStrip(size_t id) {
+	std::unique_lock<std::mutex> stripsLock(stripsMutex);
+
 	//Find the node in the vector
-	auto found = std::find_if(std::begin(nodes), std::end(nodes),
-		[&node](const std::shared_ptr<LightNode>& listNode) {
-			return node.get() == listNode.get(); //Compare by address
+	auto found = std::find_if(strips.begin(), strips.end(),
+		[id](const auto& pair) {
+			return pair.first == id;
 		});
 
-	if(found == std::end(nodes)) {
+	if(found == strips.end()) {
 		//We didn't find the node
-		throw Exception(EXCEPTION_LIGHT_EFFECT_NODE_NOT_FOUND,
-			"ILightEffect::removeNode: node not found in vector");
+		throw Exception(EXCEPTION_LIGHT_EFFECT_STRIP_NOT_FOUND,
+			"ILightEffect::removeStrip: strip not found in vector");
 	}
-	
+
+	if(onRemove) {
+		onRemove(*found);
+	}
+
 	//Remove the node
-	nodes.erase(found);
+	strips.erase(found);
 }
 
-std::vector<std::shared_ptr<LightNode>>::iterator
-	ILightEffect::begin() {
-	
-	return std::begin(nodes);
-}
+void ILightEffect::update() {
+	std::vector<size_t> deadStrips;
 
-std::vector<std::shared_ptr<LightNode>>::iterator
-	ILightEffect::end() {
-	
-	return std::end(nodes);
+	//Call 'tick' (to allow effect to perform updates)
+	tick();
+
+	{
+		std::unique_lock<std::mutex> stripsLock(stripsMutex);
+
+		for(auto& pair : strips) {
+			auto sharedStrip = pair.second.lock();
+
+			if(sharedStrip) {
+				updateStrip(sharedStrip);
+			}
+			else {
+				deadStrips.push_back(pair.first);
+			}
+		}
+	}
+
+	for(auto &strip : deadStrips) {
+		removeStrip(strip);
+	}
 }

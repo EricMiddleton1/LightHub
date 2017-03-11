@@ -1,5 +1,9 @@
 #include "LightHub.hpp"
 
+#include "LightStripAnalog.hpp"
+#include "LightStripDigital.hpp"
+#include "LightStripMatrix.hpp"
+
 using namespace std;
 
 LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort, DiscoveryMethod_e _discoveryMethod,
@@ -218,14 +222,42 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 			if(e.getErrorCode() == LIGHT_HUB_NODE_NOT_FOUND) {
 					//The sender is not in the list of connected nodes
 					
-					if(p.getID() == Packet::INFO) {
-					//TODO: Give the new node a unique name
-					//TODO: Have the node send its set name along with other parameters
-					std::string name = receiveEndpoint.address().to_string();
-					LightNode::Type type = static_cast<LightNode::Type>(p.getPayload()[0]);
-					uint16_t ledCount = (p.getPayload()[1] << 8) | (p.getPayload()[2]);
+				if(p.getID() == Packet::INFO) {
+					auto payload = p.getPayload();
+					uint8_t analogCount = payload[0],
+						digitalCount = payload[1],
+						matrixCount = payload[2];
 					
-					auto newNode = std::make_shared<LightNode>(name, type, ledCount,
+					if(payload.size() < (4 + 2*(digitalCount+matrixCount))) {
+						throw Exception(LIGHT_HUB_INVALID_PAYLOAD,
+							"LightHub::handleReceive: Expected payload at least "
+							+ std::to_string(4 + 2*(digitalCount+matrixCount)) + " bytes, but "
+							"is only " + std::to_string(payload.size()) + " bytes");
+					}
+
+					std::vector<std::shared_ptr<LightStrip>> strips;
+
+					for(size_t i = 0; i < analogCount; ++i) {
+						strips.emplace_back(std::make_shared<LightStripAnalog>());
+					}
+
+					for(size_t i = 0; i < digitalCount; ++i) {
+						uint16_t size = (payload[3 + 2*i] << 8) | (payload[4 + 2*i]);
+
+						strips.emplace_back(std::make_shared<LightStripDigital>(size));
+					}
+
+					for(size_t i = 0; i < matrixCount; ++i) {
+						uint8_t width = payload[3 + 2*digitalCount + 2*i],
+							height = payload[4 + 2*digitalCount + 2*i];
+
+						strips.emplace_back(std::make_shared<LightStripMatrix>(width, height));
+					}
+
+					std::string name(payload.begin() + 3 + 2*(digitalCount+matrixCount),
+						payload.end());
+					
+					auto newNode = std::make_shared<LightNode>(name, strips,
 						receiveEndpoint.address(), sendPort);
 
 					//Store the new node

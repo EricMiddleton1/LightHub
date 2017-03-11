@@ -2,15 +2,11 @@
 
 using namespace std;
 
-LightNode::LightNode(const string& _name, Type _type, uint16_t _ledCount,
+LightNode::LightNode(const string& _name,
+	const std::vector<std::shared_ptr<LightStrip>>& _strips,
 	const boost::asio::ip::address& addr, uint16_t sendPort)
 		:	name(_name)
-		,	type{_type}
-		,	width{(_type == Type::MATRIX) ? (_ledCount >> 8) : _ledCount}
-		,	height{(_type == Type::MATRIX) ? (_ledCount & 0xFF) : 1}
-		,	ledCount{width * height}
-		,	strip{ledCount}
-		,	isDirty{true}
+		,	strips{_strips}
 		,	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
 		,	connectTimer(ioService)
@@ -33,11 +29,9 @@ LightNode::LightNode(const string& _name, Type _type, uint16_t _ledCount,
 }
 
 LightNode::~LightNode() {
-	//Make sure nobody has a reference to the LightStrip
-	unique_lock<mutex> stripLock(stripMutex);
-
 	//Clear the io_service work unit
 	workPtr.reset();
+	ioService.stop();
 
 	asyncThread.join();
 }
@@ -120,9 +114,6 @@ void LightNode::changeState(State newState) {
 	if(newState == State::CONNECTED) {
 		feedWatchdog();
 		resetSendTimer();
-
-		//Indicate that an update is needed
-		isDirty = true;
 	}
 	else if(newState == State::CONNECTING) {
 		connect();
@@ -208,10 +199,6 @@ string LightNode::getName() const {
 	return name;
 }
 
-LightNode::Type LightNode::getType() const {
-	return type;
-}
-
 boost::asio::ip::address LightNode::getAddress() const {
 	return udpEndpoint.address();
 }
@@ -246,7 +233,7 @@ void LightNode::receivePacket(const Packet& p) {
 				disconnect();
 			}
 			else {
-				cout << "[Warning] LightNode::receivePacket: Received NACK (" << strip.getSize() << ")" << endl;
+				cout << "[Warning] LightNode::receivePacket: Received NACK" << endl;
 			}
 		break;
 
@@ -256,45 +243,15 @@ void LightNode::receivePacket(const Packet& p) {
 	}
 }
 
-//TODO: Return a class that manages the mutex state in RAII-style
-LightStrip& LightNode::getLightStrip() {
-	//Lock the strip mutex
-	stripMutex.lock();
-
-	return strip;
-}
-
-void LightNode::releaseLightStrip(bool _isDirty) {
-	stripMutex.unlock();
-
-	isDirty = _isDirty;
-}
-
-uint16_t LightNode::getWidth() const {
-	return width;
-}
-
-uint16_t LightNode::getHeight() const {
-	return height;
-}
-
 bool LightNode::update() {
-	//Make sure the node is connected AND needs to be updated
-	if(state != State::CONNECTED || !isDirty)
+	if(state != State::CONNECTED)
 		return false;
 
 	Packet p;
 
-	{
-		unique_lock<mutex> stripLock(stripMutex);
-
-		p = Packet::Update(strip.getPixels());
-	}
+	p = Packet::Update(strips);
 
 	sendPacket(p);
-
-	//Clear the dirty bit
-	isDirty = false;
 
 	return true;
 }

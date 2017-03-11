@@ -25,9 +25,9 @@ Packet::Packet(const std::vector<uint8_t>& datagram) {
 	id = (ID_e)datagram[2];
 
 	if(id == INFO) {
-		if(datagram.size() != 6) {
+		if(datagram.size() < 7) {
 			throw Exception(PACKET_INVALID_SIZE,
-				"[Packet::Packet]Error: Packet size != 6 for type INFO");
+				"[Packet::Packet]Error: Packet size < 7 for type INFO");
 		}
 		payload = std::vector<uint8_t>(datagram.begin() + 3,
 																					datagram.end());
@@ -93,22 +93,15 @@ Packet Packet::Init() {
 	return Packet(INIT, std::vector<uint8_t>());
 }
 
-Packet Packet::Info(uint16_t pixelCount) {
+Packet Packet::Update(const std::vector<std::shared_ptr<LightStrip>>& strips) {
 	std::vector<uint8_t> payload;
-
-	payload.push_back( (pixelCount >> 8) & 0xFF );
-	payload.push_back( (pixelCount) & 0xFF );
-
-	return Packet(INFO, payload);
-}
-
-Packet Packet::Update(const std::vector<Color>& colors) {
-	std::vector<uint8_t> payload;
-
-	for(const auto& c : colors) {
-		payload.push_back(c.getRed());
-		payload.push_back(c.getGreen());
-		payload.push_back(c.getBlue());
+	
+	for(const auto& strip : strips) {
+		for(const auto& c : strip->getPixels()) {
+			payload.push_back(c.getRed());
+			payload.push_back(c.getGreen());
+			payload.push_back(c.getBlue());
+		}
 	}
 
 	return Packet(UPDATE, payload);

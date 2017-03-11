@@ -5,11 +5,17 @@
 
 #include "Rhopalia.hpp"
 
+#include "AudioDevice.hpp"
+#include "SpectrumAnalyzer.hpp"
+#include "SoundColor.hpp"
+
+/*
 #include "LightEffectSoundSolid.hpp"
 #include "LightEffectSoundMove.hpp"
 #include "LightEffectMatrixEQ.hpp"
 #include "LightEffectStripEQ.hpp"
 #include "LightEffectStripStEQ.hpp"
+*/
 
 #define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
@@ -19,9 +25,11 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
+/*
 std::shared_ptr<ILightEffect> analogEffect;
 std::shared_ptr<ILightEffect> digitalEffect;
 std::shared_ptr<ILightEffect> matrixEffect;
+*/
 
 void printNodes(Rhopalia&);
 
@@ -55,18 +63,20 @@ int main() {
 	//Create a SoundColor
 	SoundColor soundColor(spectrumAnalyzer, scs);
 
+/*
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
-	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
 	digitalEffect = std::make_shared<LightEffectStripStEQ>(spectrumAnalyzer);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
-
+*/
 	Rhopalia controller;
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
-	
+
+/*
 	controller.addEffect(analogEffect);
 	controller.addEffect(digitalEffect);
 	controller.addEffect(matrixEffect);
+*/
 
 	//Start the audio device
 	audioDevice->startStream();
@@ -142,13 +152,15 @@ int main() {
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	node->addListener(LightNode::ListenerType::STATE_CHANGE, slotNodeStateChange);
 
+	std::cout << "[Info] New node discovered" << std::endl;
+/*
 	size_t ledCount = node->getLightStrip().getSize();
 	node->releaseLightStrip();
 
 	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
 		<< node->getName() << "' of type '"<< static_cast<int>(node->getType())
 		<< "' with " << ledCount << " leds" << std::endl;
-	
+
 	if(node->getType() == LightNode::Type::ANALOG) {
 		analogEffect->addNode(node);
 	}
@@ -161,6 +173,7 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	else {
 		std::cout << "[Error] Node connected with unknown type" << std::endl;
 	}
+*/
 }
 
 void slotNodeStateChange(LightNode* node, LightNode::State,

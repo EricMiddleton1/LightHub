@@ -18,23 +18,6 @@ public:
 	Rhopalia();
 	~Rhopalia();
 
-	//Overload to add listener of internal Rhopalia events
-/*
-	template <class T>
-	void addListener(ListenerType_e listenType, T slot) {
-		if(listenType == EFFECT_UPDATE) {
-			sigEffectUpdate.connect(slot);
-		}
-		else if(listenType == LIGHT_UPDATE) {
-			sigLightUpdate.connect(slot);
-		}
-		else {
-			std::cout << "[Error] Rhopalia::addListener: Invalid listener type"
-				<< std::endl;
-		}
-	}
-*/
-
 	//Overload to add listener of external LightHub events
 	template <class T>
 	void addListener(LightHub::ListenerType_e listenType, T slot) {

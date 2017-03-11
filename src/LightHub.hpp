@@ -29,6 +29,7 @@ public:
 
 	//Exception codes
 	static const uint16_t LIGHT_HUB_NODE_NOT_FOUND = 1;
+	static const uint16_t LIGHT_HUB_INVALID_PAYLOAD = 2;
 
 	LightHub(uint16_t sendPort, uint16_t recvPort, DiscoveryMethod_e,
 		uint32_t discoverPeriod = 1000);

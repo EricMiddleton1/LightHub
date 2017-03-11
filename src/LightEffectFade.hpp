@@ -11,11 +11,9 @@ class LightEffectFade : public ILightEffect
 public:
 	LightEffectFade(float brightness, float speed);
 
-	virtual void addNode(const std::shared_ptr<LightNode>&) override;
-
 private:
-	virtual void update() override;
-	void slotStateChange(LightNode*, LightNode::State);
+	virtual void tick() override;
+	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
 
 	float brightness, speed, hue;
 

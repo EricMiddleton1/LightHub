@@ -2,7 +2,9 @@
 
 #include <cstdint> //for int typedefs
 #include <vector> //for std::vector
+#include <memory>
 
+#include "LightStrip.hpp"
 #include "Color.hpp"
 #include "Exception.hpp"
 
@@ -44,8 +46,7 @@ public:
 	
 	static Packet Ping();
 	static Packet Init();
-	static Packet Info(uint16_t pixelCount);
-	static Packet Update(const std::vector<Color>& colors);
+	static Packet Update(const std::vector<std::shared_ptr<LightStrip>>&);
 	static Packet Alive();
 	static Packet Ack();
 	static Packet Nack();
