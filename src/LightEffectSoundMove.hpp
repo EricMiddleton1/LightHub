@@ -10,10 +10,11 @@ class LightEffectSoundMove : public ILightEffect
 {
 public:
 	LightEffectSoundMove(std::shared_ptr<SpectrumAnalyzer>);
-	~LightEffectSoundMove();
 
 private:
-	virtual void update() override;
+	virtual void tick() override;
+	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
 
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
+	Color curColor;
 };

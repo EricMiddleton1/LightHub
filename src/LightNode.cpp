@@ -199,6 +199,14 @@ string LightNode::getName() const {
 	return name;
 }
 
+std::vector<std::shared_ptr<LightStrip>>::iterator LightNode::stripBegin() {
+	return strips.begin();
+}
+
+std::vector<std::shared_ptr<LightStrip>>::iterator LightNode::stripEnd() {
+	return strips.end();
+}
+
 boost::asio::ip::address LightNode::getAddress() const {
 	return udpEndpoint.address();
 }

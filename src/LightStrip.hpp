@@ -49,12 +49,11 @@ private:
 	std::mutex countMutex;
 };
 
-
 class LightBuffer
 {
 public:
 	LightBuffer(LightStrip*);
-	~LightBuffer();
+	virtual ~LightBuffer();
 
 	LightStrip::Type getType() const;
 
@@ -65,3 +64,15 @@ protected:
 	std::vector<Color>& getPixelBuffer();
 	const std::vector<Color>& getPixelBufferConst() const;
 };
+
+template<typename Derived, typename Base, typename Del>
+std::unique_ptr<Derived, Del>
+LightBuffer_cast(std::unique_ptr<Base, Del>&& ptr) {
+	if(Derived *result = dynamic_cast<Derived*>(ptr.get())) {
+		ptr.release();
+		return std::unique_ptr<Derived, Del>(result, std::move(ptr.get_deleter()));
+	}
+	else {
+		return std::unique_ptr<Derived, Del>(nullptr, ptr.get_deleter());
+	}
+}

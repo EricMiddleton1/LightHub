@@ -4,22 +4,17 @@
 LightEffectSoundSolid::LightEffectSoundSolid(
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer,
 	const SoundColorSettings& settings)
-	:	ILightEffect({LightNode::Type::ANALOG, LightNode::Type::DIGITAL})
+	:	ILightEffect({LightStrip::Type::Analog, LightStrip::Type::Digital})
 	,	soundColor(spectrumAnalyzer, settings) {
 	
 }
 
-LightEffectSoundSolid::~LightEffectSoundSolid() {
-
+void LightEffectSoundSolid::tick() {
+	soundColor.getColor(&left, &center, &right);
 }
 
-void LightEffectSoundSolid::update() {
-	Color left, center, right;
+void LightEffectSoundSolid::updateStrip(std::shared_ptr<LightStrip> strip) {
+	auto buffer = strip->getBuffer();
 
-	soundColor.getColor(&left, &center, &right);
-
-	for(auto& node : nodes) {
-		node->getLightStrip().setAll(left);
-		node->releaseLightStrip();
-	}
+	buffer->setAll(left);
 }

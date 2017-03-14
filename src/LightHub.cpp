@@ -266,10 +266,6 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 					//Send a signal
 					sigNodeDiscover(newNode);
 				}
-				else {
-					cout << "[Warning] Received packet from unconnected device with ID "
-						<< p.getID() << endl;
-				}
 			}
 			else {
 				//Some other error occurred

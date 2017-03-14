@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <iostream> //For debugging
-
 #include "ILightEffect.hpp"
 #include "Color.hpp"
 

@@ -4,86 +4,63 @@
 #include <iostream>
 #include <algorithm>
 
+#include "LightStripDigital.hpp"
+
 LightEffectStripEQ::LightEffectStripEQ(
-	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, size_t _maxBins)
-	:	ILightEffect({LightNode::Type::DIGITAL})
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
+	:	ILightEffect({LightStrip::Type::Digital})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
-	,	maxBins{_maxBins}
+	,	smoothed(spectrumAnalyzer->getLeftSpectrum()->getBinCount())
 	,	avgEnergy{0.}{
 	
 }
 
-LightEffectStripEQ::~LightEffectStripEQ() {
+void LightEffectStripEQ::tick() {
+	const double NOISE_FLOOR = 60.;
 
-}
+	auto spec = spectrumAnalyzer->getLeftSpectrum();
+	size_t binCount = spec->getBinCount();
+	
+	for(size_t i = 0; i < binCount; ++i) {
+		auto bin = spec->getByIndex(i);
+		double db = 0.;
 
-void LightEffectStripEQ::addNode(const std::shared_ptr<LightNode>& node) {
-	ILightEffect::addNode(node);
-
-	size_t binCount = std::min((size_t)node->getWidth(), maxBins);
-
-	values.insert({node, std::vector<double>(binCount)});
-}
-
-void LightEffectStripEQ::removeNode(std::shared_ptr<LightNode> node) {
-	ILightEffect::removeNode(node);
-
-	values.erase(node);
-}
-
-void LightEffectStripEQ::update() {
-	auto leftSpec = spectrumAnalyzer->getRightSpectrum();
-
-	for(auto& node : nodes) {
-		auto& heights = values.at(node);
-		size_t binCount = heights.size();
-		
-		auto& strip = node->getLightStrip();
-		strip.setAll({});
-
-		for(int i = 0; i < binCount; ++i) {
-			int specStart = i*leftSpec->getBinCount() / binCount,
-				specEnd = (i+1)*leftSpec->getBinCount() / binCount;
-
-			double db = 0;
-			int count = 0;
-			for(int j = specStart; j < specEnd; ++j) {
-				auto& bin = leftSpec->getByIndex(j);
-
-				if(bin.getEnergy() >= avgEnergy) {
-					db += bin.getEnergyDB();
-					count++;
-				}
-			}
-			if(count > 0) {
-				db = (db/count + 60);
-				if(leftSpec->getByIndex(i).getFreqStart() <= 150)
-					db += 10;
-				if(db < 0.)
-					db = 0.;
-			}
-			else {
-				db = 0.;
-			}
-			
-			double top = db / 60;
-			if(top > 1.)
-				top = 1.;
-			
-			heights[i] = (top >= heights[i]) ? top : top*0.25 + heights[i]*0.75;
-
-			//Additional gamma correction step
-			double value = std::pow(heights[i], 2.2);
-
-			Color c = Color::HSV(i*240. / (binCount-1), 1., value);
-			size_t ledStart = i*strip.getSize() / binCount,
-				ledEnd = (i+1)*strip.getSize() / binCount;
-			for(size_t j = ledStart; j < ledEnd; ++j) {
-				strip.setPixel(j, c);
-			}
+		if(bin.getEnergy() >= avgEnergy) {
+			db = bin.getEnergyDB() + NOISE_FLOOR;
 		}
-		node->releaseLightStrip();
+		
+		//Bass boost
+		if(bin.getFreqStart() <= 150)
+			db += 10;
+		if(db < 0.)
+			db = 0.;
+		
+		//Convert to range [0,1]
+		double top = db / 60;
+		if(top > 1.)
+			top = 1.;
+		
+		//Smooth with exponential filter
+		smoothed[i] = (top >= smoothed[i]) ? top : top*0.25 + smoothed[i]*0.75;
 	}
 
-	avgEnergy = 0.25*leftSpec->getAverageEnergy() + 0.75*avgEnergy;
+	//Smooth with exponential filter
+	avgEnergy = 0.25*spec->getAverageEnergy() + 0.75*avgEnergy;
+}
+
+void LightEffectStripEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
+	auto buffer = LightBuffer_cast<LightBufferDigital>(strip->getBuffer());
+	
+	size_t ledCount = buffer->getSize(),
+		binCount = smoothed.size();
+	
+	for(size_t i = 0; i < binCount; ++i) {
+		Color c = Color::HSV(i*240./(binCount-1), 1., std::pow(smoothed[i], 2.2));
+		
+		size_t ledStart = i*ledCount/binCount,
+			ledEnd = (i+1)*ledCount/binCount;
+		for(size_t j = ledStart; j < ledEnd; ++j) {
+			buffer->setColor(j, c);
+		}
+	}
 }

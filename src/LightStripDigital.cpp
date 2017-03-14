@@ -5,6 +5,35 @@ LightBufferDigital::LightBufferDigital(LightStripDigital *strip)
 	:	LightBuffer(strip) {
 }
 
+LightBufferDigital LightBufferDigital::operator<<(size_t shamt) {
+	auto &pixels = getPixelBuffer();
+
+	Color last(pixels[pixels.size()-1]);
+
+	for(size_t i = (pixels.size()-1); i > 0; --i) {
+		pixels[i] = pixels[i-1];
+	}
+
+	//Circular shift
+	pixels[0] = last;
+
+	return *this;
+}
+
+LightBufferDigital LightBufferDigital::operator>>(size_t shamt) {
+	auto &pixels = getPixelBuffer();
+
+	Color first(pixels[0]);
+
+	for(size_t i = (pixels.size()-1); i > 0; --i) {
+		pixels[i-1] = pixels[i];
+	}
+
+	pixels[pixels.size()-1] = first;
+
+	return *this;
+}
+
 size_t LightBufferDigital::getSize() const {
 	return getPixelBufferConst().size();
 }

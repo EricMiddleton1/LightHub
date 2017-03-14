@@ -2,6 +2,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <algorithm>
 
 #include "Rhopalia.hpp"
 
@@ -9,13 +10,9 @@
 #include "SpectrumAnalyzer.hpp"
 #include "SoundColor.hpp"
 
-/*
+#include "LightEffectFade.hpp"
 #include "LightEffectSoundSolid.hpp"
-#include "LightEffectSoundMove.hpp"
-#include "LightEffectMatrixEQ.hpp"
 #include "LightEffectStripEQ.hpp"
-#include "LightEffectStripStEQ.hpp"
-*/
 
 #define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
@@ -25,11 +22,10 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
-/*
 std::shared_ptr<ILightEffect> analogEffect;
 std::shared_ptr<ILightEffect> digitalEffect;
 std::shared_ptr<ILightEffect> matrixEffect;
-*/
+
 
 void printNodes(Rhopalia&);
 
@@ -68,16 +64,17 @@ int main() {
 	digitalEffect = std::make_shared<LightEffectStripStEQ>(spectrumAnalyzer);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 */
+	//analogEffect = std::make_shared<LightEffectFade>(1., 1.);
+	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
+	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
+
 	Rhopalia controller;
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
 
-/*
 	controller.addEffect(analogEffect);
 	controller.addEffect(digitalEffect);
-	controller.addEffect(matrixEffect);
-*/
-
+	
 	//Start the audio device
 	audioDevice->startStream();
 
@@ -152,28 +149,26 @@ int main() {
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	node->addListener(LightNode::ListenerType::STATE_CHANGE, slotNodeStateChange);
 
-	std::cout << "[Info] New node discovered" << std::endl;
-/*
-	size_t ledCount = node->getLightStrip().getSize();
-	node->releaseLightStrip();
+	std::cout << "[Info] New node discovered \"" << node->getName() << "\":" << std::endl;
+	
+	std::for_each(node->stripBegin(), node->stripEnd(),
+		[analogEffect, digitalEffect](std::shared_ptr<LightStrip>& strip) {
+			switch(strip->getType()) {
+				case LightStrip::Type::Analog:
+					analogEffect->addStrip(strip);
+					std::cout << "\tAnalog strip" << std::endl;
+				break;
 
-	std::cout << "[Info] slotNodeDiscover: New node discovered: '"
-		<< node->getName() << "' of type '"<< static_cast<int>(node->getType())
-		<< "' with " << ledCount << " leds" << std::endl;
+				case LightStrip::Type::Digital:
+					digitalEffect->addStrip(strip);
+					std::cout << "\tDigital strip (" << strip->getSize() << ")" << std::endl;
+				break;
 
-	if(node->getType() == LightNode::Type::ANALOG) {
-		analogEffect->addNode(node);
-	}
-	else if(node->getType() == LightNode::Type::DIGITAL) {
-		digitalEffect->addNode(node);
-	}
-	else if(node->getType() == LightNode::Type::MATRIX) {
-		matrixEffect->addNode(node);
-	}
-	else {
-		std::cout << "[Error] Node connected with unknown type" << std::endl;
-	}
-*/
+				default:
+					std::cout << "\tUnknown strip (" << strip->getSize() << ")" << std::endl;
+				break;
+			}
+		});
 }
 
 void slotNodeStateChange(LightNode* node, LightNode::State,

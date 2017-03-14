@@ -50,6 +50,9 @@ public:
 
 	std::string getName() const;
 
+	std::vector<std::shared_ptr<LightStrip>>::iterator stripBegin();
+	std::vector<std::shared_ptr<LightStrip>>::iterator stripEnd();
+
 	boost::asio::ip::address getAddress() const;
 	
 	static std::string stateToString(State state);

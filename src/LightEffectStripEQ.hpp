@@ -9,17 +9,13 @@
 class LightEffectStripEQ : public ILightEffect
 {
 public:
-	LightEffectStripEQ(std::shared_ptr<SpectrumAnalyzer>, size_t maxBins);
-	~LightEffectStripEQ();
-
-	virtual void addNode(const std::shared_ptr<LightNode>&) override;
-	virtual void removeNode(std::shared_ptr<LightNode>) override;
+	LightEffectStripEQ(std::shared_ptr<SpectrumAnalyzer>);
 
 private:
-	virtual void update() override;
+	virtual void tick() override;
+	virtual void updateStrip(std::shared_ptr<LightStrip> strip) override;
 
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
-	std::map<std::shared_ptr<LightNode>, std::vector<double>> values;
-	size_t maxBins;
+	std::vector<double> smoothed;
 	double avgEnergy;
 };

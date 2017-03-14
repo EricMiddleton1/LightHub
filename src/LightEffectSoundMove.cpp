@@ -1,24 +1,20 @@
 #include "LightEffectSoundMove.hpp"
+#include "LightStripDigital.hpp"
 
 #include <cmath>
 #include <iostream>
 
 LightEffectSoundMove::LightEffectSoundMove(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
-	:	ILightEffect({LightNode::Type::DIGITAL})
+	:	ILightEffect({LightStrip::Type::Digital})
 	,	spectrumAnalyzer(_spectrumAnalyzer) {
 	
 }
 
-LightEffectSoundMove::~LightEffectSoundMove() {
-
-}
-
-void LightEffectSoundMove::update() {
+void LightEffectSoundMove::tick() {
 	const int nBands = 3;
 	const double minBright = 64, filterStrength = 0.9, bassBoost = 4., scale = 10.;
 	static std::vector<double> bandFilter(nBands);
-	static Color prevColor;
 
 	auto spec = spectrumAnalyzer->getLeftSpectrum();
 	double r = 0., g = 0., b = 0.;
@@ -74,16 +70,12 @@ void LightEffectSoundMove::update() {
 		b *= scale;
 	}
 
-	prevColor.filter({(int)(r + 0.5), (int)(g + 0.5), (int)(b + 0.5)}, 0.5);
+	curColor.filter({(int)(r + 0.5), (int)(g + 0.5), (int)(b + 0.5)}, 0.5);
+}
 
-	for(auto& node : nodes) {
-		auto& strip = node->getLightStrip();
+void LightEffectSoundMove::updateStrip(std::shared_ptr<LightStrip> strip) {
+	auto buffer = LightBuffer_cast<LightBufferDigital>(strip->getBuffer());
 
-		for(size_t i = (strip.getSize() - 1); i > 0; --i) {
-			strip.setPixel(i, strip.getPixel(i-1));
-		}
-		strip.setPixel(0, prevColor);
-
-		node->releaseLightStrip();
-	}
+	*buffer << 1;
+	buffer->setColor(0, curColor);
 }

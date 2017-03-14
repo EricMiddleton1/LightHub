@@ -10,6 +10,9 @@ class LightBufferDigital : public LightBuffer
 public:
 	LightBufferDigital(LightStripDigital *);
 
+	LightBufferDigital operator<<(size_t shamt);
+	LightBufferDigital operator>>(size_t shamt);
+	
 	size_t getSize() const;
 
 	Color getColor(size_t) const;
