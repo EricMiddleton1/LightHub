@@ -34,6 +34,8 @@ public:
 
 	Color filter(const Color&, double);
 
+	void gammaCorrect(double gamma);
+
 	void print() const;
 
 	static Color HSL(float hue, float saturation, float lightness);

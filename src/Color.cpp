@@ -1,5 +1,7 @@
 #include "Color.hpp"
 
+#include <cmath>
+
 Color::Color() {
 	r = g = b = 0;
 }
@@ -54,6 +56,12 @@ Color Color::filter(const Color& other, double factor) {
 	b = b*factor + other.b*invFactor;
 
 	return *this;
+}
+
+void Color::gammaCorrect(double gamma) {
+	r = 255. * std::pow(r/255., gamma) + 0.5;
+	g = 255. * std::pow(g/255., gamma) + 0.5;
+	b = 255. * std::pow(b/255., gamma) + 0.5;
 }
 
 float Color::getHue() const {

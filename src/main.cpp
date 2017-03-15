@@ -12,6 +12,7 @@
 
 #include "LightEffectFade.hpp"
 #include "LightEffectSoundSolid.hpp"
+#include "LightEffectSoundMove.hpp"
 #include "LightEffectStripEQ.hpp"
 
 #define IP_ADDR	"192.168.1.3"
@@ -66,7 +67,8 @@ int main() {
 */
 	//analogEffect = std::make_shared<LightEffectFade>(1., 1.);
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
-	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
+	//digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
+	digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
 
 	Rhopalia controller;
 
