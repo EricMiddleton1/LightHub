@@ -21,6 +21,8 @@ void LightEffectStripEQ::tick() {
 	auto spec = spectrumAnalyzer->getLeftSpectrum();
 	size_t binCount = spec->getBinCount();
 
+	double maxVal = 0.;
+
 	for(size_t i = 0; i < binCount; ++i) {
 		auto bin = spec->getByIndex(i);
 		double db = 0.;
@@ -36,10 +38,16 @@ void LightEffectStripEQ::tick() {
 
 		//Smooth with exponential filter
 		smoothed[i] = (top >= smoothed[i]) ? top : top*0.1 + smoothed[i]*0.9;
+
+		if(smoothed[i] > maxVal) {
+			maxVal = smoothed[i];
+		}
 	}
 
 	//Smooth with exponential filter
 	avgEnergy = 0.25*spec->getAverageEnergy() + 0.75*avgEnergy;
+
+	//std::cout << maxVal << std::endl;
 }
 
 void LightEffectStripEQ::updateStrip(std::shared_ptr<LightStrip> strip) {

@@ -14,6 +14,8 @@
 #include "LightEffectSoundSolid.hpp"
 #include "LightEffectSoundMove.hpp"
 #include "LightEffectStripEQ.hpp"
+#include "LightEffectMatrixEQ.hpp"
+#include "LightEffectMatrixText.hpp"
 
 #define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
@@ -43,13 +45,13 @@ int main() {
 	SoundColorSettings scs;
 	scs.bassFreq = 150.;
 	scs.trebbleFreq = 4000.;
-	scs.bassBoost = 15.;
+	scs.bassBoost = 10.;
 	scs.trebbleBoost = 0.;
 	scs.fStart = 0;
 	scs.fEnd = 20000;
-	scs.dbScaler = 200;
-	scs.dbFactor = 1;
-	scs.avgFactor = 0.2;
+	scs.dbScaler = 500;
+	scs.dbFactor = 2.;
+	scs.avgFactor = 1.;
 	scs.noiseFloor = 60.;
 	scs.avgFilterStrength = 0.4;
 	scs.minSaturation = 0.7;
@@ -69,6 +71,13 @@ int main() {
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
 	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
 	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
+	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 10);
+	std::shared_ptr<LightEffectMatrixText> textEffect
+		(std::make_shared<LightEffectMatrixText>());
+	//matrixEffect = textEffect;
+
+	textEffect->setText("Happy Birthday Jamie!");
+	textEffect->setColor(Color(0, 0, 255));
 
 	Rhopalia controller;
 
@@ -76,6 +85,7 @@ int main() {
 
 	controller.addEffect(analogEffect);
 	controller.addEffect(digitalEffect);
+	controller.addEffect(matrixEffect);
 	
 	//Start the audio device
 	audioDevice->startStream();
@@ -164,6 +174,11 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 				case LightStrip::Type::Digital:
 					digitalEffect->addStrip(strip);
 					std::cout << "\tDigital strip (" << strip->getSize() << ")" << std::endl;
+				break;
+
+				case LightStrip::Type::Matrix:
+					matrixEffect->addStrip(strip);
+					std::cout << "\tMatrix strip" << std::endl;
 				break;
 
 				default:

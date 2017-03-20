@@ -251,6 +251,8 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 						uint8_t width = payload[3 + 2*digitalCount + 2*i],
 							height = payload[4 + 2*digitalCount + 2*i];
 
+						std::cout << "Matrix: " << (int)width << ", " << (int)height << std::endl;
+
 						strips.emplace_back(std::make_shared<LightStripMatrix>(width, height));
 					}
 
