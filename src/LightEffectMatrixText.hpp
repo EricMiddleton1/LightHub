@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <mutex>
 
 #include "ILightEffect.hpp"
 #include "Color.hpp"
@@ -20,4 +21,5 @@ private:
 	Color c;
 	std::string text;
 	size_t pos;
+	std::mutex mutex;
 };

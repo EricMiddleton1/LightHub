@@ -7,15 +7,21 @@ LightEffectMatrixText::LightEffectMatrixText()
 }
 
 void LightEffectMatrixText::setText(const std::string& _text) {
+	std::unique_lock<std::mutex> lock(mutex);
+
 	text = _text;
 	pos = 0;
 }
 
 void LightEffectMatrixText::setColor(const Color& _c) {
+	std::unique_lock<std::mutex> lock(mutex);
+
 	c = _c;
 }
 
 void LightEffectMatrixText::tick() {
+	std::unique_lock<std::mutex> lock(mutex);
+
 	static size_t tick;
 
 	tick = (tick + 1) % 2;
@@ -26,6 +32,8 @@ void LightEffectMatrixText::tick() {
 }
 
 void LightEffectMatrixText::updateStrip(std::shared_ptr<LightStrip> strip) {
+	std::unique_lock<std::mutex> lock(mutex);
+
 	auto buffer = LightBuffer_cast<LightBufferMatrix>(strip->getBuffer());
 	size_t curPos = pos % (6*text.length() + buffer->getWidth());
 

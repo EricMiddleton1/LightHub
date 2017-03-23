@@ -8,6 +8,7 @@
 
 #include "Exception.hpp"
 #include "LightStrip.hpp"
+//#include "Parameter.hpp"
 
 
 //Forward declaration
@@ -20,7 +21,7 @@ public:
 	static const uint16_t EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE = 0x0021;
 	static const uint16_t EXCEPTION_LIGHT_EFFECT_STRIP_ALREADY_CONNECTED = 0x0022;
 
-	ILightEffect(const std::vector<LightStrip::Type>&);
+	ILightEffect(const std::vector<LightStrip::Type>& supportedTypes);
 	virtual ~ILightEffect();
 
 	void addStrip(const std::shared_ptr<LightStrip>&);

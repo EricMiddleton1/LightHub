@@ -39,7 +39,7 @@ int main() {
 
 	//Create a spectrum analyzer
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer =
-		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3,4096,1);
+		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 4096,1);
 
 	//Configure SoundColor settings
 	SoundColorSettings scs;
@@ -71,12 +71,11 @@ int main() {
 	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
 	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
 	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
-	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 10);
+	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 100);
 	std::shared_ptr<LightEffectMatrixText> textEffect
 		(std::make_shared<LightEffectMatrixText>());
 	//matrixEffect = textEffect;
 
-	textEffect->setText("Happy Birthday Jamie!");
 	textEffect->setColor(Color(0, 0, 255));
 
 	Rhopalia controller;
@@ -89,7 +88,7 @@ int main() {
 	
 	//Start the audio device
 	audioDevice->startStream();
-
+/*
 	//Everything is handled by other threads now
 	for(;;) {
 		std::cout << ">";
@@ -153,6 +152,16 @@ int main() {
 			std::cout << "[Error] Unsupported operation '" << input << "'"
 				<< std::endl;
 		}
+	}
+	*/
+
+	for(;;) {
+		char msg[1024];
+
+		std::cout << ">";
+		std::cin.getline(msg, sizeof(msg));
+
+		textEffect->setText(msg);
 	}
 
 	return 0;
