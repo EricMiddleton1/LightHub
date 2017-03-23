@@ -10,7 +10,8 @@ LightEffectMatrixEQ::LightEffectMatrixEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, unsigned int _bandCount)
 	:	ILightEffect({LightStrip::Type::Matrix})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
-	,	bandCount{std::min((size_t)_bandCount, _spectrumAnalyzer->getLeftSpectrum()->getBinCount())}
+	,	bandCount{std::min((size_t)_bandCount,
+		_spectrumAnalyzer->getLeftSpectrum().getBinCount())}
 	,	heights(bandCount) {
 	
 }
@@ -20,11 +21,11 @@ LightEffectMatrixEQ::~LightEffectMatrixEQ() {
 }
 
 void LightEffectMatrixEQ::tick() {
-	auto leftSpec = spectrumAnalyzer->getLeftSpectrum();
+	Spectrum spec = spectrumAnalyzer->getMonoSpectrum();
 
 	const double MIN_FLOOR = 50.;
 
-	std::vector<FrequencyBin> sorted(leftSpec->begin(), leftSpec->end());
+	std::vector<FrequencyBin> sorted(spec.begin(), spec.end());
 	std::sort(sorted.begin(), sorted.end(),
 		[](const FrequencyBin& first, const FrequencyBin& second) {
 			return (first.getEnergy() < second.getEnergy());
@@ -39,16 +40,16 @@ void LightEffectMatrixEQ::tick() {
 	double noiseFloor = MIN_FLOOR;//std::min(MIN_FLOOR, -(sum/(sorted.size()*3/4))*1.5);
 
 	for(int i = 0; i < bandCount; ++i) {
-		int specStart = i*leftSpec->getBinCount() / bandCount,
-			specEnd = (i+1)*leftSpec->getBinCount() / bandCount;
+		int specStart = i*spec.getBinCount() / bandCount,
+			specEnd = (i+1)*spec.getBinCount() / bandCount;
 
 		double db = 0;
 		for(int j = specStart; j < specEnd; ++j) {
-			db += leftSpec->getByIndex(j).getEnergyDB();
+			db += spec.getByIndex(j).getEnergyDB();
 		}
 		db = (db/(specEnd - specStart) + noiseFloor) * 1.3;
 		
-		if(leftSpec->getByIndex(specStart).getFreqEnd() < 150.)
+		if(spec.getByIndex(specStart).getFreqEnd() < 150.)
 			db += 6;
 		
 		if(db < 0.)

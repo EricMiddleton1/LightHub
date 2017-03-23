@@ -46,6 +46,9 @@ public:
 	static const int ERROR_BIN_NOT_FOUND = 0x1000;
 
 	Spectrum(double fStart, double fEnd, double binsPerOctave);
+	
+	Spectrum& operator+=(const Spectrum& other);
+	Spectrum operator+(const Spectrum& other) const;
 
 	size_t getBinCount();
 

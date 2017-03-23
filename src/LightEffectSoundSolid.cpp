@@ -2,26 +2,28 @@
 
 
 LightEffectSoundSolid::LightEffectSoundSolid(
-	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer,
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	const SoundColorSettings& settings, LightEffectSoundSolid::Channel _channel)
 	:	ILightEffect({LightStrip::Type::Analog, LightStrip::Type::Digital})
-	,	soundColor(spectrumAnalyzer, settings)
+	,	spectrumAnalyzer{_spectrumAnalyzer}
+	,	soundColor(settings)
 	,	channel{_channel} {
 	
 }
 
 void LightEffectSoundSolid::tick() {
+
 	switch(channel) {
 		case LightEffectSoundSolid::Channel::Left:
-			c = soundColor.getLeftColor();
+			c = soundColor.getColor(spectrumAnalyzer->getLeftSpectrum());
 		break;
 
 		case LightEffectSoundSolid::Channel::Center:
-			c = soundColor.getCenterColor();
+			c = soundColor.getColor(spectrumAnalyzer->getMonoSpectrum());
 		break;
 
 		case LightEffectSoundSolid::Channel::Right:
-			c = soundColor.getRightColor();
+			c = soundColor.getColor(spectrumAnalyzer->getRightSpectrum());
 		break;
 	}
 }

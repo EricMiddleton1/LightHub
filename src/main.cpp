@@ -25,7 +25,7 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
-std::shared_ptr<ILightEffect> analogEffect;
+std::shared_ptr<ILightEffect> leftEffect, bassEffect, rightEffect;
 std::shared_ptr<ILightEffect> digitalEffect;
 std::shared_ptr<ILightEffect> matrixEffect;
 
@@ -39,7 +39,7 @@ int main() {
 
 	//Create a spectrum analyzer
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer =
-		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 4096,1);
+		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 4096);
 
 	//Configure SoundColor settings
 	SoundColorSettings scs;
@@ -59,18 +59,21 @@ int main() {
 	scs.centerSpread = 0.5;
 	scs.centerBehavior = SoundColorSettings::MONO;
 
-	//Create a SoundColor
-	SoundColor soundColor(spectrumAnalyzer, scs);
 
-/*
-	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
-	digitalEffect = std::make_shared<LightEffectStripStEQ>(spectrumAnalyzer);
-	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
-*/
-	//analogEffect = std::make_shared<LightEffectFade>(1., 1.);
-	analogEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs);
+	//Left/Right full range sound effects
+	leftEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
+		LightEffectSoundSolid::Channel::Left);
+	rightEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
+		LightEffectSoundSolid::Channel::Right);
+
+	//Mono bass sound effect
+	scs.fEnd = 150.;
+	scs.bassFreq = scs.fEnd;
+
+	bassEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
+		LightEffectSoundSolid::Channel::Center);
+
 	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
-	//digitalEffect = std::make_shared<LightEffectSoundMove>(spectrumAnalyzer);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 100);
 	std::shared_ptr<LightEffectMatrixText> textEffect
 		(std::make_shared<LightEffectMatrixText>());
@@ -82,7 +85,9 @@ int main() {
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
 
-	controller.addEffect(analogEffect);
+	controller.addEffect(leftEffect);
+	controller.addEffect(bassEffect);
+	controller.addEffect(rightEffect);
 	controller.addEffect(digitalEffect);
 	controller.addEffect(matrixEffect);
 	
@@ -172,12 +177,21 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 
 	std::cout << "[Info] New node discovered \"" << node->getName() << "\":" << std::endl;
 	
+	unsigned int analogCount = 0;
 	std::for_each(node->stripBegin(), node->stripEnd(),
-		[analogEffect, digitalEffect](std::shared_ptr<LightStrip>& strip) {
+		[&analogCount](std::shared_ptr<LightStrip>& strip) {
 			switch(strip->getType()) {
 				case LightStrip::Type::Analog:
-					analogEffect->addStrip(strip);
-					std::cout << "\tAnalog strip" << std::endl;
+					if(analogCount == 0)
+						rightEffect->addStrip(strip);
+					else if(analogCount == 1)
+						bassEffect->addStrip(strip);
+					else
+						leftEffect->addStrip(strip);
+					
+					analogCount++;
+
+					std::cout << "\tAnalog strip (" << analogCount << ")" << std::endl;
 				break;
 
 				case LightStrip::Type::Digital:

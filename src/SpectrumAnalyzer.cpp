@@ -6,16 +6,16 @@ using namespace std;
 
 SpectrumAnalyzer::SpectrumAnalyzer(std::shared_ptr<AudioDevice>& _audioDevice,
 	double fStart, double fEnd,
-	double binsPerOctave, unsigned int maxBlockSize, unsigned int threadCount)
+	double binsPerOctave, unsigned int maxBlockSize)
 	:	workUnit(std::make_unique<boost::asio::io_service::work>(ioService))
-	,	leftSpectrum(std::make_shared<Spectrum>(fStart, fEnd, binsPerOctave))
-	,	rightSpectrum(std::make_shared<Spectrum>(fStart, fEnd, binsPerOctave))
+	,	leftSpectrum(fStart, fEnd, binsPerOctave)
+	,	rightSpectrum(fStart, fEnd, binsPerOctave)
 	,	audioDevice(_audioDevice)
 	,	chunkSize{audioDevice->getBlockSize()} {
 
 	//Determine optimum block size
-	double minResolution = leftSpectrum->begin()->getFreqEnd() -
-		leftSpectrum->begin()->getFreqStart();
+	double minResolution = leftSpectrum.begin()->getFreqEnd() -
+		leftSpectrum.begin()->getFreqStart();
 	
 	unsigned int chunksPerBlockPower =
 		std::ceil(std::log2(audioDevice->getSampleRate() /
@@ -54,18 +54,13 @@ SpectrumAnalyzer::SpectrumAnalyzer(std::shared_ptr<AudioDevice>& _audioDevice,
 	leftBuffer.resize(blockSize);
 	rightBuffer.resize(blockSize);
 
-	//Launch threads
-	for(unsigned int i = 0; i < threadCount; ++i) {
-		asyncThreads.emplace_back(std::bind(&SpectrumAnalyzer::threadRoutine,
-			this));
-	}
+	//Launch thread
+	asyncThread = std::thread(std::bind(&SpectrumAnalyzer::threadRoutine,
+		this));
 
 	//Register audio callback
-	auto cb = [this](const int16_t* left, const int16_t* right) {
-			cbAudio(left, right);
-		};
-
-	callbackID = audioDevice->addCallback(cb);
+	callbackID = audioDevice->addCallback(std::bind(&SpectrumAnalyzer::cbAudio, this,
+		std::placeholders::_1, std::placeholders::_2));
 }
 
 SpectrumAnalyzer::~SpectrumAnalyzer() {
@@ -75,9 +70,7 @@ SpectrumAnalyzer::~SpectrumAnalyzer() {
 	//Shutdown threads
 	workUnit.reset();
 
-	for(auto& thread : asyncThreads) {
-		thread.join();
-	}
+	asyncThread.join();
 
 	//Cleanup fftw stuff
 	fftw_destroy_plan(fftPlan);
@@ -85,34 +78,23 @@ SpectrumAnalyzer::~SpectrumAnalyzer() {
 	fftw_free(fftOut);
 }
 
-void SpectrumAnalyzer::addListener(std::function<void(SpectrumAnalyzer*,
-	std::shared_ptr<Spectrum>, std::shared_ptr<Spectrum>)> cb) {
-
-	sigSpectrumUpdate.connect(cb);
-}
-
-void SpectrumAnalyzer::removeListener(std::function<void(SpectrumAnalyzer*,
-	std::shared_ptr<Spectrum>, std::shared_ptr<Spectrum>)> /*cb*/) {
-
-	//sigSpectrumUpdate.disconnect(cb);
-}
-
 std::shared_ptr<AudioDevice> SpectrumAnalyzer::getAudioDevice() {
 	return audioDevice;
 }
 
-std::shared_ptr<Spectrum> SpectrumAnalyzer::getLeftSpectrum() {
+Spectrum SpectrumAnalyzer::getLeftSpectrum() const {
 	return leftSpectrum;
 }
 
-std::shared_ptr<Spectrum> SpectrumAnalyzer::getRightSpectrum() {
+Spectrum SpectrumAnalyzer::getRightSpectrum() const {
 	return rightSpectrum;
 }
 
-void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
-	//Lock the buffer mutex
-	//std::unique_lock<std::mutex> bufferLock(bufferMutex);
+Spectrum SpectrumAnalyzer::getMonoSpectrum() const {
+	return leftSpectrum + rightSpectrum;
+}
 
+void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
 	//Shift the samples forward by 1 chunk size
 	std::memmove(leftBuffer.data(), &leftBuffer[chunkSize],
 		sizeof(int16_t) * (blockSize - chunkSize));
@@ -125,7 +107,7 @@ void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
 	std::memcpy(&rightBuffer[blockSize - chunkSize], right,
 		sizeof(int16_t) * chunkSize);
 
-	//Post the fft routine to the async thread pool
+	//Post the fft routine to the async thread
 	ioService.post(std::bind(&SpectrumAnalyzer::fftRoutine, this,
 		leftBuffer, rightBuffer));
 }
@@ -133,9 +115,6 @@ void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
 void SpectrumAnalyzer::threadRoutine() {
 	//Run work from ioService
 	ioService.run();
-
-	std::cout << "[Info] SpectrumAnalyzer::threadRoutine: thread returning"
-		<< std::endl;
 }
 
 void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
@@ -155,7 +134,7 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 	fftw_execute(fftPlan);
 
 	//Fill left spectrum with new FFT data
-	leftSpectrum->clear();
+	leftSpectrum.clear();
 
 
 	for(unsigned int i = 0; i < blockSize/2; ++i) {
@@ -163,7 +142,7 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 
 		try {
 			//Put the energy from this bin into the appropriate location
-			leftSpectrum->get(f).addEnergy(std::sqrt(sqr(fftOut[i][0]) +
+			leftSpectrum.get(f).addEnergy(std::sqrt(sqr(fftOut[i][0]) +
 				sqr(fftOut[i][1])));
 		}
 		catch(const Exception& e) {
@@ -189,14 +168,14 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 	fftw_execute(fftPlan);
 
 	//Fill right spectrum with new FFT data
-	rightSpectrum->clear();
+	rightSpectrum.clear();
 
 	for(unsigned int i = 0; i < blockSize/2; ++i) {
 		double f = sampleRate * i / blockSize; //Frequency of fft bin
 
 		try {
 			//Put the energy from this bin into the appropriate location
-			rightSpectrum->get(f).addEnergy(std::sqrt(sqr(fftOut[i][0]) +
+			rightSpectrum.get(f).addEnergy(std::sqrt(sqr(fftOut[i][0]) +
 				sqr(fftOut[i][1])));
 		}
 		catch(const Exception& e) {
@@ -212,11 +191,8 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 	}
 
 	//Update stats for both spectrums
-	leftSpectrum->updateStats();
-	rightSpectrum->updateStats();
-
-	//Call all listeners
-	sigSpectrumUpdate(this, leftSpectrum, rightSpectrum);
+	leftSpectrum.updateStats();
+	rightSpectrum.updateStats();
 }
 
 void SpectrumAnalyzer::generateWindow() {

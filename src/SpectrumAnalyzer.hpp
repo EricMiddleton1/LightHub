@@ -19,19 +19,18 @@ class SpectrumAnalyzer
 public:
 	SpectrumAnalyzer(std::shared_ptr<AudioDevice>& audioDevice,
 		double fStart, double fEnd,
-		double binsPerOctave, unsigned int maxBlockSize, unsigned int threadCount = 4);
+		double binsPerOctave, unsigned int maxBlockSize);
 	~SpectrumAnalyzer();
 
-	void addListener(std::function<void(SpectrumAnalyzer*,
-		std::shared_ptr<Spectrum>, std::shared_ptr<Spectrum>)> cb);
 
 	void removeListener(std::function<void(SpectrumAnalyzer*,
 		std::shared_ptr<Spectrum>, std::shared_ptr<Spectrum>)>);
 
 	std::shared_ptr<AudioDevice> getAudioDevice();
 
-	std::shared_ptr<Spectrum> getLeftSpectrum();
-	std::shared_ptr<Spectrum> getRightSpectrum();
+	Spectrum getLeftSpectrum() const;
+	Spectrum getRightSpectrum() const;
+	Spectrum getMonoSpectrum() const;
 
 private:
 	void threadRoutine();
@@ -44,9 +43,9 @@ private:
 	//Thread stuff
 	boost::asio::io_service ioService;
 	std::unique_ptr<boost::asio::io_service::work> workUnit;
-	std::vector<std::thread> asyncThreads;
+	std::thread asyncThread;
 
-	std::shared_ptr<Spectrum> leftSpectrum, rightSpectrum;
+	Spectrum leftSpectrum, rightSpectrum;
 
 	//Audio sample buffers
 	std::vector<int16_t> leftBuffer, rightBuffer;
@@ -56,11 +55,6 @@ private:
 	fftw_complex *fftIn, *fftOut;
 	fftw_plan fftPlan;
 	std::vector<double> fftWindow;
-
-	//Signals
-	boost::signals2::signal<void(SpectrumAnalyzer*,
-		std::shared_ptr<Spectrum> left, std::shared_ptr<Spectrum> right)>
-		sigSpectrumUpdate;
 
 	//Audio device stuff
 	std::shared_ptr<AudioDevice> audioDevice;

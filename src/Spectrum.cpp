@@ -99,6 +99,24 @@ Spectrum::Spectrum(double fStart, double fEnd, double binsPerOctave) {
 	std::cout << std::endl;
 }
 
+Spectrum& Spectrum::operator+=(const Spectrum& other) {
+	if( (bins.size() != other.bins.size()) ) {
+		throw std::invalid_argument("Spectrum::operator+=: Operands must have equal "
+			"bin counts (" + std::to_string(bins.size()) + " vs " +
+			std::to_string(other.bins.size()) + ")");
+	}
+
+	for(unsigned int i = 0; i < bins.size(); ++i) {
+		bins[i] += other.bins[i].getEnergy();
+	}
+
+	return *this;
+}
+
+Spectrum Spectrum::operator+(const Spectrum& other) const {
+	return Spectrum(*this) += other;
+}
+
 FrequencyBin& Spectrum::get(double frequency) {
 	auto foundBin = std::find_if(std::begin(bins),
 		std::end(bins),

@@ -29,105 +29,22 @@ std::string SoundColorSettings::toString() {
 }
 
 
-SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
-	const SoundColorSettings& _settings)
-	:	settings(_settings)
-	,	spectrumAnalyzer{_spectrumAnalyzer} {
-
-	//Get the spectrum to calculate the color vector
-	auto spectrum = spectrumAnalyzer->getLeftSpectrum();
-
-	//Determine the corresponding bin to freqBass
-	size_t bassBin = 0;
-	for(; bassBin < spectrum->getBinCount(); ++bassBin) {
-		auto& bin = spectrum->getByIndex(bassBin);
-
-		if(bin.getFreqCenter() >= settings.bassFreq)
-			break;
-	}
-
-	//bassBin minimum of 2
-	if(bassBin < 2)
-		bassBin = 2;
-	
-	//Determine the corresponding bin to freqTrebble
-	size_t trebbleBin = 0;
-	for(trebbleBin = bassBin; trebbleBin < spectrum->getBinCount(); ++trebbleBin) {
-		auto& bin = spectrum->getByIndex(trebbleBin);
-
-		if(bin.getFreqCenter() >= settings.trebbleFreq)
-			break;
-	}
-
-	for(size_t i = 0; i < bassBin; i++) {
-		double hue = i * 30. / (bassBin);
-
-		Color c = Color::HSV(hue, 1., 1.);
-
-		frequencyColors.push_back(c);
-	}
-
-	for(size_t i = bassBin; i < spectrum->getBinCount(); i++) {
-		double hue = 30. + (i - bassBin) * 210. /
-			(spectrum->getBinCount() - bassBin - 1);
-
-		Color c = Color::HSV(hue, 1., 1.);
-
-		frequencyColors.push_back(c);
-	}
-
-	//Initialize each color channel
-	left.avg = 0.;
-	center.avg = 0.;
-	right.avg = 0.;
-
-	//spectrumAnalyzer->addListener(std::bind(SoundColor::cbSpectrum, this));
-	spectrumAnalyzer->addListener([this](SpectrumAnalyzer* sa,
-		std::shared_ptr<Spectrum> left, std::shared_ptr<Spectrum> right) {
-		cbSpectrum(sa, left, right);
-	});
+SoundColor::SoundColor(const SoundColorSettings& _settings)
+	:	settings(_settings) {
 }
 
-SoundColor::~SoundColor() {
-	//Remove the spectrum listener
-	//spectrumAnalyzer->removeListener(std::bind(&SoundColor::cbSpectrum, this));
+Color SoundColor::getColor(Spectrum spectrum) {
+	renderColor(spectrum);
+
+	return c;
 }
 
-Color SoundColor::getLeftColor() const {
-	std::unique_lock<std::mutex> colorLock(colorMutex);
-	
-	return left.c;
-}
-
-Color SoundColor::getCenterColor() const {
-	std::unique_lock<std::mutex> colorLock(colorMutex);
-
-	return center.c;
-}
-
-Color SoundColor::getRightColor() const {
-	std::unique_lock<std::mutex> colorLock(colorMutex);
-
-	return right.c;
-}
-
-void SoundColor::cbSpectrum(SpectrumAnalyzer*,
-	std::shared_ptr<Spectrum> leftSpectrum,
-	std::shared_ptr<Spectrum> rightSpectrum) {
-
-	std::unique_lock<std::mutex> colorLock(colorMutex);
-
-	renderColor(left, leftSpectrum);
-	renderColor(right, rightSpectrum);
-}
-
-void SoundColor::renderColor(ColorChannel& prevColor,
-	std::shared_ptr<Spectrum> spectrum) {
+void SoundColor::renderColor(Spectrum& spectrum) {
 
 	double r = 0., g = 0., b = 0.;
-	size_t binCount = spectrum->getBinCount();
+	size_t binCount = spectrum.getBinCount();
 
-	double curAvg = spectrum->getAverageEnergyDB() + settings.noiseFloor;
+	double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
 
 	if(curAvg < 0)
 		curAvg = 0;
@@ -135,22 +52,31 @@ void SoundColor::renderColor(ColorChannel& prevColor,
 	double absFloor = std::pow(10., -100);
 	double absBoost = std::pow(10., settings.bassBoost/20.);
 	
-	prevColor.avg = prevColor.avg*settings.avgFilterStrength
+	avg = avg*settings.avgFilterStrength
 		+ curAvg*(1. - settings.avgFilterStrength);
 
 	//Scale to be applied to each bin
 	double scale = 1. / settings.dbScaler;
 
+	bool isBass = true;
+	unsigned int bassIndex = 0;
+
 	for(unsigned int i = 0; i < binCount; ++i) {
-		FrequencyBin& bin = spectrum->getByIndex(i);
+		FrequencyBin& bin = spectrum.getByIndex(i);
 		double f = bin.getFreqCenter();
 
 		if(f > settings.fEnd)
 			break;
 
 		if(f >= settings.fStart) {
-			Color c = frequencyColors[i];
-			//Color c = Color::HSV(240.f * i / (binCount - 1), 1.f, 1.f);
+			if(isBass && f > settings.bassFreq) {
+				bassIndex = i;
+				isBass = false;
+			}
+			
+			float hue = (isBass) ? 0.f : (240.f * (i-bassIndex) / (binCount - bassIndex - 1));
+
+			Color c = Color::HSV(hue, 1.f, 1.f);
 			double db = bin.getEnergyDB();
 			double energy = bin.getEnergy();
 
@@ -163,7 +89,7 @@ void SoundColor::renderColor(ColorChannel& prevColor,
 				db += settings.trebbleBoost;
 			
 			//Raise by noise floor, subtract loosly-tracking average
-			db += settings.noiseFloor - prevColor.avg;
+			db += settings.noiseFloor - avg;
 
 			//Reject anything below the average
 			if(db < 0)
@@ -171,7 +97,7 @@ void SoundColor::renderColor(ColorChannel& prevColor,
 
 			//Scale partially based on average level
 			db *= settings.dbFactor;
-			db += settings.avgFactor*prevColor.avg;
+			db += settings.avgFactor*avg;
 
 			r += db * c.getRed();
 			g += db * c.getGreen();
@@ -196,12 +122,12 @@ void SoundColor::renderColor(ColorChannel& prevColor,
 		b *= scale;
 	}
 
-	Color c(r, g, b);
-	double h = c.getHue(), s = c.getHSVSaturation(), v = c.getValue();
+	Color cTmp(r, g, b);
+	double h = cTmp.getHue(), s = cTmp.getHSVSaturation(), v = cTmp.getValue();
 
 	//Enforce saturation minimum
-	c = Color::HSV(h, std::max(settings.minSaturation, s), v);
+	cTmp = Color::HSV(h, std::max(settings.minSaturation, s), v);
 
 	//Filter the color
-	prevColor.c.filter(c, settings.filterStrength);
+	c.filter(cTmp, settings.filterStrength);
 }

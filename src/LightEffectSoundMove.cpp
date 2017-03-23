@@ -20,12 +20,12 @@ void LightEffectSoundMove::tick() {
 	double r = 0., g = 0., b = 0.;
 
 	for(int i = 0; i < nBands; ++i) {
-		int start = spec->getBinCount() * i / nBands,
-			end = spec->getBinCount()*(i+1) / nBands - 1;
+		int start = spec.getBinCount() * i / nBands,
+			end = spec.getBinCount()*(i+1) / nBands - 1;
 		double sum = 0.;
 
 		for(int j = start; j < end; ++j) {
-			sum += spec->getByIndex(j).getEnergy();
+			sum += spec.getByIndex(j).getEnergy();
 		}
 
 		sum /= end - start;

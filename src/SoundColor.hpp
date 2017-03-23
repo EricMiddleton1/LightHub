@@ -50,31 +50,15 @@ struct SoundColorSettings
 class SoundColor
 {
 public:
-	SoundColor(std::shared_ptr<SpectrumAnalyzer>,
-		const SoundColorSettings&);
-	~SoundColor();
+	SoundColor(const SoundColorSettings&);
 
-	Color getLeftColor() const;
-	Color getCenterColor() const;
-	Color getRightColor() const;
+	Color getColor(Spectrum);
 
 private:
-	struct ColorChannel {
-		Color c;
-		double avg;
-	};
-	void cbSpectrum(SpectrumAnalyzer*, std::shared_ptr<Spectrum> left,
-		std::shared_ptr<Spectrum> right);
-
-	void renderColor(ColorChannel&, std::shared_ptr<Spectrum>);
+	void renderColor(Spectrum&);
 
 	SoundColorSettings settings;
 
-	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
-
-	std::vector<Color> frequencyColors;
-
-	ColorChannel left, center, right;
-
-	mutable std::mutex colorMutex;
+	Color c;
+	double avg;
 };

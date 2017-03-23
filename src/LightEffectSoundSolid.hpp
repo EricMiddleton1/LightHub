@@ -21,7 +21,8 @@ public:
 private:
 	virtual void tick() override;
 	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
-
+	
+	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 	SoundColor soundColor;
 	Channel channel;
 

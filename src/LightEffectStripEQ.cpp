@@ -10,7 +10,7 @@ LightEffectStripEQ::LightEffectStripEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
 	:	ILightEffect({LightStrip::Type::Digital})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
-	,	smoothed(spectrumAnalyzer->getLeftSpectrum()->getBinCount())
+	,	smoothed(spectrumAnalyzer->getLeftSpectrum().getBinCount())
 	,	avgEnergy{0.}{
 	
 }
@@ -18,13 +18,13 @@ LightEffectStripEQ::LightEffectStripEQ(
 void LightEffectStripEQ::tick() {
 	const double NOISE_FLOOR = 50.;
 
-	auto spec = spectrumAnalyzer->getLeftSpectrum();
-	size_t binCount = spec->getBinCount();
+	Spectrum spec = spectrumAnalyzer->getMonoSpectrum();
+	size_t binCount = spec.getBinCount();
 
 	double maxVal = 0.;
 
 	for(size_t i = 0; i < binCount; ++i) {
-		auto bin = spec->getByIndex(i);
+		auto bin = spec.getByIndex(i);
 		double db = 0.;
 
 		if(bin.getEnergy() >= avgEnergy) {
@@ -45,7 +45,7 @@ void LightEffectStripEQ::tick() {
 	}
 
 	//Smooth with exponential filter
-	avgEnergy = 0.25*spec->getAverageEnergy() + 0.75*avgEnergy;
+	avgEnergy = 0.25*spec.getAverageEnergy() + 0.75*avgEnergy;
 
 	//std::cout << maxVal << std::endl;
 }
