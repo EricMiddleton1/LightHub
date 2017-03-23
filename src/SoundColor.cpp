@@ -36,30 +36,35 @@ SoundColor::SoundColor(const SoundColorSettings& _settings)
 Color SoundColor::getColor(Spectrum spectrum) {
 	renderColor(spectrum);
 
+	if(settings.fEnd < 200.) {
+		std::cout << c.toString() << std::endl;
+	}
+
 	return c;
 }
 
 void SoundColor::renderColor(Spectrum& spectrum) {
+	static int bassIndex = -1;
 
 	double r = 0., g = 0., b = 0.;
 	size_t binCount = spectrum.getBinCount();
+
+	if(bassIndex == -1) {
+		for(bassIndex = 0; (bassIndex < binCount) &&
+			(spectrum.getByIndex(bassIndex).getFreqCenter() <= settings.bassFreq); ++bassIndex);
+		std::cout << "Bass Index: " << bassIndex << std::endl;
+	}
 
 	double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
 
 	if(curAvg < 0)
 		curAvg = 0;
 
-	double absFloor = std::pow(10., -100);
-	double absBoost = std::pow(10., settings.bassBoost/20.);
-	
 	avg = avg*settings.avgFilterStrength
 		+ curAvg*(1. - settings.avgFilterStrength);
 
 	//Scale to be applied to each bin
 	double scale = 1. / settings.dbScaler;
-
-	bool isBass = true;
-	unsigned int bassIndex = 0;
 
 	for(unsigned int i = 0; i < binCount; ++i) {
 		FrequencyBin& bin = spectrum.getByIndex(i);
@@ -69,16 +74,11 @@ void SoundColor::renderColor(Spectrum& spectrum) {
 			break;
 
 		if(f >= settings.fStart) {
-			if(isBass && f > settings.bassFreq) {
-				bassIndex = i;
-				isBass = false;
-			}
-			
-			float hue = (isBass) ? 0.f : (240.f * (i-bassIndex) / (binCount - bassIndex - 1));
+			float hue = (f <= settings.bassFreq) ? (30.f*i)/(bassIndex-1)
+				: (30.f + 240.f * (i-bassIndex) / (binCount - bassIndex - 1));
 
 			Color c = Color::HSV(hue, 1.f, 1.f);
 			double db = bin.getEnergyDB();
-			double energy = bin.getEnergy();
 
 			//Bass boost
 			if(f <= settings.bassFreq)
