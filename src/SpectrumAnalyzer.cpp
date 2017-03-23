@@ -91,7 +91,15 @@ Spectrum SpectrumAnalyzer::getRightSpectrum() const {
 }
 
 Spectrum SpectrumAnalyzer::getMonoSpectrum() const {
-	return leftSpectrum + rightSpectrum;
+	auto mono = leftSpectrum + rightSpectrum;
+
+	//Average
+	for(unsigned int i = 0; i < mono.getBinCount(); ++i) {
+		auto& bin = mono.getByIndex(i);
+		bin.setEnergy(bin.getEnergy() / 2.);
+	}
+
+	return mono;
 }
 
 void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {

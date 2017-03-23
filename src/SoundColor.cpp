@@ -74,8 +74,8 @@ void SoundColor::renderColor(Spectrum& spectrum) {
 			break;
 
 		if(f >= settings.fStart) {
-			float hue = (f <= settings.bassFreq) ? (30.f*i)/(bassIndex-1)
-				: (30.f + 240.f * (i-bassIndex) / (binCount - bassIndex - 1));
+			float hue = (f <= settings.bassFreq) ? 40.f*std::pow((double)i/(bassIndex-1), 4.)
+				: (45.f + 240.f * (i-bassIndex) / (binCount - bassIndex - 1));
 
 			Color c = Color::HSV(hue, 1.f, 1.f);
 			double db = bin.getEnergyDB();

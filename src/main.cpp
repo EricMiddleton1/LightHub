@@ -65,10 +65,18 @@ int main() {
 		LightEffectSoundSolid::Channel::Left);
 	rightEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
 		LightEffectSoundSolid::Channel::Right);
-
+/*
 	//Mono bass sound effect
-	scs.fEnd = 150.;
+	scs.bassBoost = 6.;
+	scs.fEnd = 120.;
 	scs.bassFreq = scs.fEnd;
+	scs.dbScaler = 225;
+	scs.noiseFloor = 40.;
+	scs.dbFactor = 2.;
+	scs.avgFilterStrength = 0.0;
+	scs.minSaturation = 0;
+	scs.filterStrength = 0.4;
+*/
 
 	bassEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
 		LightEffectSoundSolid::Channel::Center);
