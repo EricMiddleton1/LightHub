@@ -9,13 +9,21 @@
 class LightEffectSoundSolid : public ILightEffect
 {
 public:
+	enum class Channel {
+		Left = 0,
+		Center,
+		Right
+	};
+
 	LightEffectSoundSolid(std::shared_ptr<SpectrumAnalyzer>,
-		const SoundColorSettings&);
+		const SoundColorSettings&, Channel channel = Channel::Center);
 
 private:
 	virtual void tick() override;
 	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
 
 	SoundColor soundColor;
-	Color left, center, right;
+	Channel channel;
+
+	Color c;
 };

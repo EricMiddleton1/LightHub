@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <mutex>
 
 #include <boost/signals2.hpp>
 
@@ -53,9 +54,9 @@ public:
 		const SoundColorSettings&);
 	~SoundColor();
 
-	bool changed();
-
-	void getColor(Color* left, Color* center, Color* right);
+	Color getLeftColor() const;
+	Color getCenterColor() const;
+	Color getRightColor() const;
 
 private:
 	struct ColorChannel {
@@ -65,7 +66,7 @@ private:
 	void cbSpectrum(SpectrumAnalyzer*, std::shared_ptr<Spectrum> left,
 		std::shared_ptr<Spectrum> right);
 
-	void renderColor(ColorChannel&, Spectrum&);
+	void renderColor(ColorChannel&, std::shared_ptr<Spectrum>);
 
 	SoundColorSettings settings;
 
@@ -75,5 +76,5 @@ private:
 
 	ColorChannel left, center, right;
 
-	bool hasChanged;
+	mutable std::mutex colorMutex;
 };

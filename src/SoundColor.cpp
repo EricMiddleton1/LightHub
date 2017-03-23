@@ -5,8 +5,6 @@
 #include <functional>
 #include <sstream>
 
-#include <cstdio> //For printf
-
 using namespace std;
 
 std::string SoundColorSettings::toString() {
@@ -34,8 +32,7 @@ std::string SoundColorSettings::toString() {
 SoundColor::SoundColor(std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 	const SoundColorSettings& _settings)
 	:	settings(_settings)
-	,	spectrumAnalyzer{_spectrumAnalyzer}
-	,	hasChanged{false} {
+	,	spectrumAnalyzer{_spectrumAnalyzer} {
 
 	//Get the spectrum to calculate the color vector
 	auto spectrum = spectrumAnalyzer->getLeftSpectrum();
@@ -96,73 +93,56 @@ SoundColor::~SoundColor() {
 	//spectrumAnalyzer->removeListener(std::bind(&SoundColor::cbSpectrum, this));
 }
 
-bool SoundColor::changed() {
-	return hasChanged;
+Color SoundColor::getLeftColor() const {
+	std::unique_lock<std::mutex> colorLock(colorMutex);
+	
+	return left.c;
 }
 
-void SoundColor::getColor(Color* _left, Color* _center, Color* _right) {
-	*_left = left.c;
-	*_center = center.c;
-	*_right = right.c;
+Color SoundColor::getCenterColor() const {
+	std::unique_lock<std::mutex> colorLock(colorMutex);
 
-	hasChanged = false;
+	return center.c;
+}
+
+Color SoundColor::getRightColor() const {
+	std::unique_lock<std::mutex> colorLock(colorMutex);
+
+	return right.c;
 }
 
 void SoundColor::cbSpectrum(SpectrumAnalyzer*,
 	std::shared_ptr<Spectrum> leftSpectrum,
 	std::shared_ptr<Spectrum> rightSpectrum) {
 
-	//Render color for left, right channels
-	renderColor(left, *leftSpectrum.get());
-	//renderColor(right, *rightSpectrum.get());
+	std::unique_lock<std::mutex> colorLock(colorMutex);
 
-	hasChanged = true;
+	renderColor(left, leftSpectrum);
+	renderColor(right, rightSpectrum);
 }
 
-void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
+void SoundColor::renderColor(ColorChannel& prevColor,
+	std::shared_ptr<Spectrum> spectrum) {
 
 	double r = 0., g = 0., b = 0.;
-	size_t binCount = spectrum.getBinCount();
+	size_t binCount = spectrum->getBinCount();
 
-	double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
+	double curAvg = spectrum->getAverageEnergyDB() + settings.noiseFloor;
 
 	if(curAvg < 0)
 		curAvg = 0;
 
 	double absFloor = std::pow(10., -100);
 	double absBoost = std::pow(10., settings.bassBoost/20.);
-/*
-	double curAvg = spectrum.getAverageEnergy();
-
-	if(curAvg < absFloor)
-		curAvg = absFloor;
-*/
-
-
-	//Loosely track the average DB
-	/*if(prevColor.avg > curAvg) {
-		//Slope limiting
-		prevColor.avg -= std::min(settings.slopeLimitAvg, prevColor.avg - curAvg);
-	}
-	else {
-		//Jump up to current average
-		//prevColor.avg = curAvg;
-
-		//Slope limiting
-		prevColor.avg += std::min(settings.slopeLimitAvg, curAvg - prevColor.avg);
-	}*/
+	
 	prevColor.avg = prevColor.avg*settings.avgFilterStrength
 		+ curAvg*(1. - settings.avgFilterStrength);
-	
-
 
 	//Scale to be applied to each bin
 	double scale = 1. / settings.dbScaler;
-	//double scale = 500;
-
 
 	for(unsigned int i = 0; i < binCount; ++i) {
-		FrequencyBin& bin = spectrum.getByIndex(i);
+		FrequencyBin& bin = spectrum->getByIndex(i);
 		double f = bin.getFreqCenter();
 
 		if(f > settings.fEnd)
@@ -181,14 +161,7 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 			//Trebble boost
 			if(f >= settings.trebbleFreq)
 				db += settings.trebbleBoost;
-/*
-			if(f <= settings.bassFreq)
-				energy *= absBoost;
-
-			energy -= prevColor.avg;
-			if(energy < 0)
-				energy = 0;
-*/
+			
 			//Raise by noise floor, subtract loosly-tracking average
 			db += settings.noiseFloor - prevColor.avg;
 
@@ -203,12 +176,6 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 			r += db * c.getRed();
 			g += db * c.getGreen();
 			b += db * c.getBlue();
-/*
-			//Add weighted color to running color average
-			r += energy * c.getRed();
-			g += energy * c.getGreen();
-			b += energy * c.getBlue();
-*/
 		}
 	}
 
@@ -216,19 +183,6 @@ void SoundColor::renderColor(ColorChannel& prevColor, Spectrum& spectrum) {
 	r *= scale;
 	g *= scale;
 	b *= scale;
-
-/*
-	//Convert to DB
-	r = 20.*std::log10(r);
-	if(r < 0)
-		r = 0;
-	g = 20.*std::log10(g);
-	if(g < 0)
-		g = 0;
-	b = 20.*std::log10(b);
-	if(b < 0)
-		b = 0;
-*/
 
 	//Compute largest component
 	double largest = std::max(r, std::max(g, b));
