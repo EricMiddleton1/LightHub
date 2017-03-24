@@ -236,7 +236,11 @@ void LightNode::receivePacket(const Packet& p) {
 		break;
 
 		case Packet::NACK:
-			if(p.getPayload()[0] == static_cast<unsigned char>(Packet::UPDATE)) {
+			if(p.getPayload().size() < 1) {
+				std::cout << "[Error] LightNode::receivePacket: Received NACK with no payload"
+					<< std::endl;
+			}
+			else if(p.getPayload()[0] == static_cast<unsigned char>(Packet::UPDATE)) {
 				//NACKing an update is a fatal error
 				disconnect();
 			}

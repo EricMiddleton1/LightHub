@@ -9,7 +9,8 @@
 class LightEffectMatrixEQ : public ILightEffect
 {
 public:
-	LightEffectMatrixEQ(std::shared_ptr<SpectrumAnalyzer>, unsigned int bandCount);
+	LightEffectMatrixEQ(std::shared_ptr<SpectrumAnalyzer>, unsigned int bandCount,
+		bool invert = false);
 	~LightEffectMatrixEQ();
 
 private:
@@ -18,5 +19,6 @@ private:
 
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 	unsigned int bandCount;
+	bool invert;
 	std::vector<double> heights;
 };

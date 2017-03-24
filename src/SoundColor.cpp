@@ -35,11 +35,11 @@ SoundColor::SoundColor(const SoundColorSettings& _settings)
 
 Color SoundColor::getColor(Spectrum spectrum) {
 	renderColor(spectrum);
-
+/*
 	if(settings.fEnd < 200.) {
 		std::cout << c.toString() << std::endl;
 	}
-
+*/
 	return c;
 }
 

@@ -7,11 +7,13 @@
 #include "LightStripMatrix.hpp"
 
 LightEffectMatrixEQ::LightEffectMatrixEQ(
-	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, unsigned int _bandCount)
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, unsigned int _bandCount,
+		bool _invert)
 	:	ILightEffect({LightStrip::Type::Matrix})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
 	,	bandCount{std::min((size_t)_bandCount,
 		_spectrumAnalyzer->getLeftSpectrum().getBinCount())}
+	,	invert{_invert}
 	,	heights(bandCount) {
 	
 }
@@ -101,7 +103,9 @@ void LightEffectMatrixEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 			float hue = 240.*i/(bars.size()-1);
 
 			for(unsigned int y = 0; y <= top; ++y) {
-				buffer->setColor(x, /*buffer->getHeight() -*/ y /*- 1*/,
+				unsigned int yPos = (invert) ? (y) : (buffer->getHeight() - y - 1);
+
+				buffer->setColor(x, yPos,
 					Color::HSV(hue, 1.f, std::pow(1.f - 1.0f*y / top, 1.0)));
 			}
 		}
