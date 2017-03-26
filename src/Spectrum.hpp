@@ -50,11 +50,12 @@ public:
 	Spectrum& operator+=(const Spectrum& other);
 	Spectrum operator+(const Spectrum& other) const;
 
-	size_t getBinCount();
+	size_t getBinCount() const;
 
 	FrequencyBin& get(double frequency);
 
 	FrequencyBin& getByIndex(size_t index);
+	FrequencyBin getByIndexConst(size_t index) const;
 
 
 	void clear();

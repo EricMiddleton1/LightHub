@@ -136,7 +136,11 @@ FrequencyBin& Spectrum::getByIndex(size_t index) {
 	return bins[index];
 }
 
-size_t Spectrum::getBinCount() {
+FrequencyBin Spectrum::getByIndexConst(size_t index) const {
+	return bins[index];
+}
+
+size_t Spectrum::getBinCount() const {
 	return bins.size();
 }
 

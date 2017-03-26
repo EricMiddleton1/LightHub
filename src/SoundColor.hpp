@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <mutex>
+#include <cstdint>
 
 #include <boost/signals2.hpp>
 
@@ -36,12 +36,7 @@ struct SoundColorSettings
 
 	double filterStrength;//Strength of exponential color filter (0 is no filter)
 
-	double centerSpread; //[0, 1] amount of center that is spread to left/right
-
-	enum {
-		MONO,
-		CENTER
-	} centerBehavior;
+	double threshold;
 
 	std::string toString();
 };

@@ -19,7 +19,7 @@ void LightEffectSoundSolid::tick() {
 		break;
 
 		case LightEffectSoundSolid::Channel::Center:
-			c = soundColor.getColor(spectrumAnalyzer->getMonoSpectrum());
+			c = soundColor.getColor(spectrumAnalyzer->getCenterSpectrum());
 		break;
 
 		case LightEffectSoundSolid::Channel::Right:

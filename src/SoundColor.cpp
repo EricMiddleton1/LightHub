@@ -23,7 +23,7 @@ std::string SoundColorSettings::toString() {
 		<< "avgFilterStrength = " << avgFilterStrength << '\n'
 		<< "minSaturation = " << minSaturation << '\n'
 		<< "filterStrength = " << filterStrength << '\n'
-		<< "centerSpread = " << centerSpread << '\n';
+		<< "threshold = " << threshold << '\n';
 	
 	return ss.str();
 }
@@ -36,15 +36,16 @@ SoundColor::SoundColor(const SoundColorSettings& _settings)
 Color SoundColor::getColor(Spectrum spectrum) {
 	renderColor(spectrum);
 /*
-	if(settings.fEnd < 200.) {
+	if(settings.fEnd > 200.) {
 		std::cout << c.toString() << std::endl;
 	}
 */
+
 	return c;
 }
 
 void SoundColor::renderColor(Spectrum& spectrum) {
-	static int bassIndex = -1;
+	static int bassIndex = -1, endIndex = -1;
 
 	double r = 0., g = 0., b = 0.;
 	size_t binCount = spectrum.getBinCount();
@@ -54,8 +55,20 @@ void SoundColor::renderColor(Spectrum& spectrum) {
 			(spectrum.getByIndex(bassIndex).getFreqCenter() <= settings.bassFreq); ++bassIndex);
 		std::cout << "Bass Index: " << bassIndex << std::endl;
 	}
+	if(endIndex == -1) {
+		for(endIndex = 0; (endIndex < binCount) &&
+			(spectrum.getByIndex(endIndex).getFreqCenter() <= settings.fEnd); ++endIndex);
+		std::cout << "End Index: " << endIndex << std::endl;
+	}
 
-	double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
+	//Compute average
+	double curAvg = 0;
+	for(unsigned int i = 0; i < endIndex; ++i) {
+		curAvg += spectrum.getByIndex(i).getEnergy();
+	}
+	curAvg = 20.*std::log10(curAvg/endIndex) + settings.noiseFloor;
+
+	//double curAvg = spectrum.getAverageEnergyDB() + settings.noiseFloor;
 
 	if(curAvg < 0)
 		curAvg = 0;
@@ -124,6 +137,10 @@ void SoundColor::renderColor(Spectrum& spectrum) {
 
 	Color cTmp(r, g, b);
 	double h = cTmp.getHue(), s = cTmp.getHSVSaturation(), v = cTmp.getValue();
+
+	if(v < settings.threshold) {
+		v = 0.;
+	}
 
 	//Enforce saturation minimum
 	cTmp = Color::HSV(h, std::max(settings.minSaturation, s), v);

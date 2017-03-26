@@ -31,6 +31,7 @@ public:
 	Spectrum getLeftSpectrum() const;
 	Spectrum getRightSpectrum() const;
 	Spectrum getMonoSpectrum() const;
+	Spectrum getCenterSpectrum() const;
 
 private:
 	void threadRoutine();

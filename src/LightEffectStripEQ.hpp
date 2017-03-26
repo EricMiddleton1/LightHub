@@ -9,7 +9,7 @@
 class LightEffectStripEQ : public ILightEffect
 {
 public:
-	LightEffectStripEQ(std::shared_ptr<SpectrumAnalyzer>);
+	LightEffectStripEQ(std::shared_ptr<SpectrumAnalyzer>, bool reverse = false);
 
 private:
 	virtual void tick() override;
@@ -18,4 +18,5 @@ private:
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 	std::vector<double> smoothed;
 	double avgEnergy;
+	bool reverse;
 };

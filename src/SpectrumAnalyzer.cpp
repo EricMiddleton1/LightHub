@@ -102,6 +102,28 @@ Spectrum SpectrumAnalyzer::getMonoSpectrum() const {
 	return mono;
 }
 
+Spectrum SpectrumAnalyzer::getCenterSpectrum() const {
+	auto center = leftSpectrum;
+/*
+	auto& leftBin = center.getByIndex(2);
+	auto& rightBin = right.getByIndex(2);
+
+	std::cout << leftBin.getEnergy() << " " << rightBin.getEnergy() << " "
+		<< std::max(0., leftBin.getEnergy() - rightBin.getEnergy()) << std::endl;
+*/
+
+	for(unsigned int i = 0; i < center.getBinCount(); ++i) {
+		auto& leftBin = center.getByIndex(i);
+		auto rightBin = rightSpectrum.getByIndexConst(i);
+		
+		double leftOnly = std::max(0., leftBin.getEnergy() - rightBin.getEnergy());
+		double rightOnly = std::max(0., rightBin.getEnergy() - leftBin.getEnergy());
+		leftBin.setEnergy(leftBin.getEnergy() - leftOnly);
+	}
+
+	return center;
+}
+
 void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
 	//Shift the samples forward by 1 chunk size
 	std::memmove(leftBuffer.data(), &leftBuffer[chunkSize],

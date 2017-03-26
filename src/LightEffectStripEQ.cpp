@@ -7,12 +7,12 @@
 #include "LightStripDigital.hpp"
 
 LightEffectStripEQ::LightEffectStripEQ(
-	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, bool _reverse)
 	:	ILightEffect({LightStrip::Type::Digital})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
 	,	smoothed(spectrumAnalyzer->getLeftSpectrum().getBinCount())
-	,	avgEnergy{0.}{
-	
+	,	avgEnergy{0.}
+	,	reverse{_reverse} {
 }
 
 void LightEffectStripEQ::tick() {
@@ -63,7 +63,8 @@ void LightEffectStripEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 		size_t ledStart = i*ledCount/binCount,
 			ledEnd = (i+1)*ledCount/binCount;
 		for(size_t j = ledStart; j < ledEnd; ++j) {
-			buffer->setColor(j, c);
+			unsigned int x = reverse ? (ledCount - j - 1) : j;
+			buffer->setColor(x, c);
 		}
 	}
 }

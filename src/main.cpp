@@ -49,16 +49,14 @@ int main() {
 	scs.trebbleBoost = 0.;
 	scs.fStart = 0;
 	scs.fEnd = 20000;
-	scs.dbScaler = 300;
-	scs.dbFactor = 2.;
-	scs.avgFactor = 1.;
-	scs.noiseFloor = 60.;
+	scs.dbScaler = 150;
+	scs.dbFactor = 1.;
+	scs.avgFactor = 0.5;
+	scs.noiseFloor = 50.;
 	scs.avgFilterStrength = 0.4;
 	scs.minSaturation = 0.7;
-	scs.filterStrength = 0.7;
-	scs.centerSpread = 0.5;
-	scs.centerBehavior = SoundColorSettings::MONO;
-
+	scs.filterStrength = 0.8;
+	scs.threshold = 0.;
 
 	//Left/Right full range sound effects
 	leftEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
@@ -70,19 +68,25 @@ int main() {
 
 
 	//Mono bass sound effect
+	scs.trebbleFreq = 4000.;
 	scs.bassBoost = 6.;
-	scs.fEnd = 120.;
+	scs.trebbleBoost = 0.;
+	scs.fStart = 0;
+	scs.fEnd = 120;
 	scs.bassFreq = scs.fEnd;
-	scs.dbScaler = 225;
-	scs.noiseFloor = 40.;
-	scs.dbFactor = 2.;
-	scs.avgFilterStrength = 0.0;
-	scs.minSaturation = 0;
+	scs.dbScaler = 200;
+	scs.dbFactor = 1.;
+	scs.avgFactor = 1.;
+	scs.noiseFloor = 60.;
+	scs.avgFilterStrength = 0.4;
+	scs.minSaturation = 0.;
 	scs.filterStrength = 0.4;
+	scs.threshold = 0.125;
+	
 	bulbEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
 		LightEffectSoundSolid::Channel::Center);
 
-	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
+	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer, true);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 100);
 	visualizerEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 100, true);
 	std::shared_ptr<LightEffectMatrixText> textEffect
