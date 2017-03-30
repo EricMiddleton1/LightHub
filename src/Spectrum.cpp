@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <stdexcept>
 
 FrequencyBin::FrequencyBin(double _fStart, double _fEnd, double _energy)
 	:	fStart{_fStart}
@@ -88,9 +89,6 @@ Spectrum::Spectrum(double fStart, double fEnd, double binsPerOctave) {
 		else {
 			//Construct a new frequency bin at the end of the vector
 			bins.emplace_back(curFreq, curEnd);
-
-			std::cout << "New bin: [" << curFreq << "hz, " << curEnd << "hz), Q = "
-				<< (bins.end() - 1)->getQ() << "\n";
 
 			curFreq = curEnd;
 		}

@@ -2,11 +2,11 @@
 
 #include <memory>
 
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 #include "Color.hpp"
-#include "SoundColor.hpp"
+#include "SpectrumAnalyzer.hpp"
 
-class LightEffectSoundSolid : public ILightEffect
+class LightEffectSoundSolid : public LightEffect
 {
 public:
 	enum class Channel {
@@ -16,14 +16,16 @@ public:
 	};
 
 	LightEffectSoundSolid(std::shared_ptr<SpectrumAnalyzer>,
-		const SoundColorSettings&, Channel channel = Channel::Center);
+		Channel channel = Channel::Center);
+
 
 private:
 	virtual void tick() override;
 	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
+
+	void renderColor(Spectrum spectrum);
 	
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
-	SoundColor soundColor;
 	Channel channel;
 
 	Color c;

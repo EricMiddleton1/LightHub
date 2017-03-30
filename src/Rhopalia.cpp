@@ -19,7 +19,7 @@ Rhopalia::~Rhopalia() {
 	asyncThread.join();
 }
 
-void Rhopalia::addEffect(const std::shared_ptr<ILightEffect>& effect) {
+void Rhopalia::addEffect(const std::shared_ptr<LightEffect>& effect) {
 	effects.push_back(effect);
 }
 

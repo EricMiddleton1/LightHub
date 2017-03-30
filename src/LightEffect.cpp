@@ -1,14 +1,18 @@
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 
+#include <stdexcept>
+#include <algorithm>
 
-ILightEffect::ILightEffect(const std::vector<LightStrip::Type>& _types)
-	:	supportedTypes(_types) {
+LightEffect::LightEffect(const std::vector<LightStrip::Type>& _types,
+	const std::vector<Parameter>& _parameters)
+	:	ConfigurableObject(_parameters)
+	,	supportedTypes(_types) {
 }
 
-ILightEffect::~ILightEffect() {
+LightEffect::~LightEffect() {
 }
 
-void ILightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
+void LightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
 	std::unique_lock<std::mutex> stripsLock(stripsMutex);
 	
 	auto id = strip->getID();
@@ -18,13 +22,13 @@ void ILightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
 			return pair.first == id;
 		}) != strips.end()) {
 		throw Exception(EXCEPTION_LIGHT_EFFECT_STRIP_ALREADY_CONNECTED,
-			"ILightEffect::addStrip: Strip already connected");
+			"LightEffect::addStrip: Strip already connected");
 	}
 
 	if(find(supportedTypes.begin(), supportedTypes.end(), strip->getType())
 		== supportedTypes.end()) {
 		throw Exception(EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE,
-			"ILightEffect::addStrip: Strip type unsupported");
+			"LightEffect::addStrip: Strip type unsupported");
 	}
 	
 	auto pair = std::pair<size_t, std::weak_ptr<LightStrip>>(id, strip);
@@ -36,7 +40,7 @@ void ILightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
 	}
 }
 
-void ILightEffect::removeStrip(size_t id) {
+void LightEffect::removeStrip(size_t id) {
 	std::unique_lock<std::mutex> stripsLock(stripsMutex);
 
 	//Find the node in the vector
@@ -48,7 +52,7 @@ void ILightEffect::removeStrip(size_t id) {
 	if(found == strips.end()) {
 		//We didn't find the node
 		throw Exception(EXCEPTION_LIGHT_EFFECT_STRIP_NOT_FOUND,
-			"ILightEffect::removeStrip: strip not found in vector");
+			"LightEffect::removeStrip: strip not found in vector");
 	}
 
 	if(onRemove) {
@@ -59,7 +63,7 @@ void ILightEffect::removeStrip(size_t id) {
 	strips.erase(found);
 }
 
-void ILightEffect::update() {
+void LightEffect::update() {
 	std::vector<size_t> deadStrips;
 
 	//Call 'tick' (to allow effect to perform updates)

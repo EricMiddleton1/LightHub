@@ -2,15 +2,14 @@
 
 #include <map>
 #include <vector>
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 #include "Color.hpp"
-#include "SoundColor.hpp"
+#include "SpectrumAnalyzer.hpp"
 
-class LightEffectMatrixEQ : public ILightEffect
+class LightEffectMatrixEQ : public LightEffect
 {
 public:
-	LightEffectMatrixEQ(std::shared_ptr<SpectrumAnalyzer>, unsigned int bandCount,
-		bool invert = false);
+	LightEffectMatrixEQ(std::shared_ptr<SpectrumAnalyzer>);
 	~LightEffectMatrixEQ();
 
 private:
@@ -18,7 +17,5 @@ private:
 	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
 
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
-	unsigned int bandCount;
-	bool invert;
 	std::vector<double> heights;
 };

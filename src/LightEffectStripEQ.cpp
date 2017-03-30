@@ -7,12 +7,11 @@
 #include "LightStripDigital.hpp"
 
 LightEffectStripEQ::LightEffectStripEQ(
-	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, bool _reverse)
-	:	ILightEffect({LightStrip::Type::Digital})
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
+	:	LightEffect({LightStrip::Type::Digital}, {{"reverse", false}})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
 	,	smoothed(spectrumAnalyzer->getLeftSpectrum().getBinCount())
-	,	avgEnergy{0.}
-	,	reverse{_reverse} {
+	,	avgEnergy{0.} {
 }
 
 void LightEffectStripEQ::tick() {
@@ -51,8 +50,10 @@ void LightEffectStripEQ::tick() {
 }
 
 void LightEffectStripEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
-	auto buffer = LightBuffer_cast<LightBufferDigital>(strip->getBuffer());
+	bool reverse = getParameter("reverse").getValue().getBool();
 	
+	auto buffer = LightBuffer_cast<LightBufferDigital>(strip->getBuffer());
+
 	size_t ledCount = buffer->getSize(),
 		binCount = smoothed.size();
 	

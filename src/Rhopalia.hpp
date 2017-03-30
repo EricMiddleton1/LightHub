@@ -9,7 +9,7 @@
 #include <boost/signals2.hpp>
 
 #include "LightHub.hpp"
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 
 
 class Rhopalia
@@ -24,7 +24,7 @@ public:
 		hub.addListener(listenType, slot);
 	}
 
-	void addEffect(const std::shared_ptr<ILightEffect>&);
+	void addEffect(const std::shared_ptr<LightEffect>&);
 
 	std::vector<std::shared_ptr<LightNode>>::iterator nodeBegin();
 	std::vector<std::shared_ptr<LightNode>>::iterator nodeEnd();
@@ -45,7 +45,7 @@ private:
 	void cbUpdateTimer(const boost::system::error_code&);
 
 	LightHub hub;
-	std::vector<std::shared_ptr<ILightEffect>> effects;
+	std::vector<std::shared_ptr<LightEffect>> effects;
 
 	boost::asio::io_service ioService;
 	std::unique_ptr<boost::asio::io_service::work> workUnit;

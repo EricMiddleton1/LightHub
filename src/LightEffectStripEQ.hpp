@@ -2,14 +2,14 @@
 
 #include <map>
 #include <vector>
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 #include "Color.hpp"
-#include "SoundColor.hpp"
+#include "SpectrumAnalyzer.hpp"
 
-class LightEffectStripEQ : public ILightEffect
+class LightEffectStripEQ : public LightEffect
 {
 public:
-	LightEffectStripEQ(std::shared_ptr<SpectrumAnalyzer>, bool reverse = false);
+	LightEffectStripEQ(std::shared_ptr<SpectrumAnalyzer>);
 
 private:
 	virtual void tick() override;
@@ -18,5 +18,4 @@ private:
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 	std::vector<double> smoothed;
 	double avgEnergy;
-	bool reverse;
 };

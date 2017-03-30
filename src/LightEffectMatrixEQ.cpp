@@ -7,14 +7,13 @@
 #include "LightStripMatrix.hpp"
 
 LightEffectMatrixEQ::LightEffectMatrixEQ(
-	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer, unsigned int _bandCount,
-		bool _invert)
-	:	ILightEffect({LightStrip::Type::Matrix})
+	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
+	:	LightEffect({LightStrip::Type::Matrix},
+		{{"invert", false}, {"band count",
+			(double)_spectrumAnalyzer->getLeftSpectrum().getBinCount(),
+			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
-	,	bandCount{std::min((size_t)_bandCount,
-		_spectrumAnalyzer->getLeftSpectrum().getBinCount())}
-	,	invert{_invert}
-	,	heights(bandCount) {
+	,	heights(getParameter("band count").getValue().getNumber()) {
 	
 }
 
@@ -26,6 +25,12 @@ void LightEffectMatrixEQ::tick() {
 	Spectrum spec = spectrumAnalyzer->getMonoSpectrum();
 
 	const double MIN_FLOOR = 50.;
+
+	unsigned int bandCount = getParameter("band count").getValue().getNumber();
+
+	if(bandCount != heights.size()) {
+		heights = std::vector<double>(bandCount);
+	}
 
 	std::vector<FrequencyBin> sorted(spec.begin(), spec.end());
 	std::sort(sorted.begin(), sorted.end(),
@@ -78,6 +83,9 @@ void LightEffectMatrixEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 
 	std::vector<double> bars;
 
+	unsigned int bandCount = heights.size();
+	bool invert = getParameter("invert").getValue().getBool();
+
 	unsigned int width = 1, gap = 0, start = 0;
 	if(buffer->getWidth() >= (2*bandCount - 1)) {
 		//gap = 1;
@@ -90,11 +98,12 @@ void LightEffectMatrixEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 		bars.push_back(heights[heights.size()-1]);
 
 		width = std::ceil(buffer->getWidth() / (bars.size())) - gap;
-		start = (buffer->getWidth() - (bars.size()*width + gap*(bars.size()-1))) / 2;
 	}
 	else {
 		bars = heights;
 	}
+	start = (buffer->getWidth() - (bars.size()*width + gap*(bars.size()-1))) / 2;
+
 
 	for(unsigned int i = 0; i < bars.size(); ++i) {
 		for(unsigned int j = 0; j < width; ++j) {

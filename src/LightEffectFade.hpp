@@ -1,19 +1,19 @@
 #pragma once
 
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 #include "Color.hpp"
 
-class LightEffectFade : public ILightEffect
+class LightEffectFade : public LightEffect
 {
 public:
-	LightEffectFade(float brightness, float speed);
+	LightEffectFade();
 
 private:
 	virtual void tick() override;
 	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
 
-	float brightness, speed, hue;
-
 	//single color for all attached lights
 	Color color;
+
+	double hue;
 };

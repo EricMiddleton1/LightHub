@@ -8,16 +8,15 @@
 
 #include "AudioDevice.hpp"
 #include "SpectrumAnalyzer.hpp"
-#include "SoundColor.hpp"
 
 #include "LightEffectFade.hpp"
+#include "LightEffectSolid.hpp"
 #include "LightEffectSoundSolid.hpp"
-#include "LightEffectSoundMove.hpp"
 #include "LightEffectStripEQ.hpp"
 #include "LightEffectMatrixEQ.hpp"
 #include "LightEffectMatrixText.hpp"
+#include "LightEffectMatrixClock.hpp"
 
-#define IP_ADDR	"192.168.1.3"
 #define HUB_TO_NODE_PORT	54923
 #define NODE_TO_HUB_PORT	54924
 
@@ -25,10 +24,9 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
-std::shared_ptr<ILightEffect> leftEffect, centerEffect, rightEffect, bulbEffect;
-std::shared_ptr<ILightEffect> digitalEffect;
-std::shared_ptr<ILightEffect> matrixEffect, visualizerEffect;
-
+std::shared_ptr<LightEffect> leftEffect, centerEffect, rightEffect, bassEffect;
+std::shared_ptr<LightEffect> digitalEffect;
+std::shared_ptr<LightEffect> matrixEffect, visualizerEffect;
 
 void printNodes(Rhopalia&);
 
@@ -41,59 +39,28 @@ int main() {
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer =
 		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 4096);
 
-	//Configure SoundColor settings
-	SoundColorSettings scs;
-	scs.bassFreq = 150.;
-	scs.trebbleFreq = 4000.;
-	scs.bassBoost = 10.;
-	scs.trebbleBoost = 0.;
-	scs.fStart = 0;
-	scs.fEnd = 20000;
-	scs.dbScaler = 150;
-	scs.dbFactor = 1.;
-	scs.avgFactor = 0.5;
-	scs.noiseFloor = 50.;
-	scs.avgFilterStrength = 0.4;
-	scs.minSaturation = 0.7;
-	scs.filterStrength = 0.8;
-	scs.threshold = 0.;
-
 	//Left/Right full range sound effects
-	leftEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
+	leftEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer,
 		LightEffectSoundSolid::Channel::Left);
-	rightEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
+	rightEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer,
 		LightEffectSoundSolid::Channel::Right);
-	centerEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
+	centerEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer,
+		LightEffectSoundSolid::Channel::Center);
+	bassEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer,
 		LightEffectSoundSolid::Channel::Center);
 
+	bassEffect->setParameter("bass freq", 120.);
+	bassEffect->setParameter("end frequency", 120.);
+	bassEffect->setParameter("bass boost", 6.);
+	bassEffect->setParameter("db scaler", 200.);
+	bassEffect->setParameter("average factor", 1.);
+	bassEffect->setParameter("noise floor", 60.);
+	bassEffect->setParameter("average filter strength", 0.4);
+	bassEffect->setParameter("color filter strength", 0.4);
+	bassEffect->setParameter("threshold", 0.125);
 
-	//Mono bass sound effect
-	scs.trebbleFreq = 4000.;
-	scs.bassBoost = 6.;
-	scs.trebbleBoost = 0.;
-	scs.fStart = 0;
-	scs.fEnd = 120;
-	scs.bassFreq = scs.fEnd;
-	scs.dbScaler = 200;
-	scs.dbFactor = 1.;
-	scs.avgFactor = 1.;
-	scs.noiseFloor = 60.;
-	scs.avgFilterStrength = 0.4;
-	scs.minSaturation = 0.;
-	scs.filterStrength = 0.4;
-	scs.threshold = 0.125;
-	
-	bulbEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer, scs,
-		LightEffectSoundSolid::Channel::Center);
-
-	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer, true);
-	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 100);
-	visualizerEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer, 100, true);
-	std::shared_ptr<LightEffectMatrixText> textEffect
-		(std::make_shared<LightEffectMatrixText>());
-	//matrixEffect = textEffect;
-
-	textEffect->setColor(Color(0, 0, 255));
+	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
+	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 
 	Rhopalia controller;
 
@@ -102,87 +69,24 @@ int main() {
 	controller.addEffect(leftEffect);
 	controller.addEffect(centerEffect);
 	controller.addEffect(rightEffect);
-	controller.addEffect(bulbEffect);
+	controller.addEffect(bassEffect);
 	controller.addEffect(digitalEffect);
 	controller.addEffect(matrixEffect);
-	controller.addEffect(visualizerEffect);
 	
 	//Start the audio device
 	audioDevice->startStream();
-/*
+	
 	//Everything is handled by other threads now
 	for(;;) {
-		std::cout << ">";
-
-		std::string input;
-		std::cin >> input;
-
-		if(input == "help") {
-			std::cout << "Commands:\n"
-				"nodes - List nodes\n"
-				"wificonnect - Connect to WiFi station on node\n"
-				"wifistartap - Start WiFi AP on node\n"
-				<< std::endl;
-		}
-		else if(input == "nodes") {
-			printNodes(controller);
-		}
-		else if(input == "wificonnect") {
-			printNodes(controller);
-
-			int index = 0;
-			std::string ssid, psk, sec;
-
-			std::cout << "Node Index: ";
-			std::cin >> index;
-			std::cout << "SSID: ";
-			std::cin >> ssid;
-			std::cout << "Does AP require a password (y/n): ";
-			std::cin >> sec;
-
-			if(sec == "y") {
-				std::cout << "PSK: ";
-				std::cin >> psk;
-			}
-
-
-			//TODO: check bounds
-			auto node = *(controller.nodeBegin() + index);
-
-			node->WiFiConnect(ssid, psk);
-		}
-		else if(input == "wifistartap") {
-			printNodes(controller);
-
-			int index = 0;
-			std::string ssid, psk;
-
-			std::cout << "Node Index: ";
-			std::cin >> index;
-			std::cout << "SSID: ";
-			std::cin >> ssid;
-			std::cout << "PSK: ";
-			std::cin >> psk;
-
-			//TODO: check bounds
-			auto node = *(controller.nodeBegin() + index);
-
-			node->WiFiStartAP(ssid, psk);
-		}
-		else {
-			std::cout << "[Error] Unsupported operation '" << input << "'"
-				<< std::endl;
-		}
-	}
-	*/
-
-	for(;;) {
+		std::this_thread::sleep_for(std::chrono::seconds(10));
+/*
 		char msg[1024];
 
 		std::cout << ">";
 		std::cin.getline(msg, sizeof(msg));
 
-		textEffect->setText(msg);
+		matrixEffect->setParameter("text", std::string(msg));
+*/
 	}
 
 	return 0;
@@ -190,60 +94,45 @@ int main() {
 
 void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 	node->addListener(LightNode::ListenerType::STATE_CHANGE, slotNodeStateChange);
+	
+	std::cout << "[Info] New node discovered \"" << node->getName() << "\":" << std::endl;
 
-	if(node->getName() == "bulb") {
-		std::cout << "[Info] Bulb discovered" << std::endl;
+	unsigned int analogCount = 0;
+	std::for_each(node->stripBegin(), node->stripEnd(),
+		[&analogCount](std::shared_ptr<LightStrip>& strip) {
+			switch(strip->getType()) {
+				case LightStrip::Type::Analog:
+					if(analogCount == 0)
+						leftEffect->addStrip(strip);
+					else if(analogCount == 1)
+						centerEffect->addStrip(strip);
+					else if(analogCount == 2)
+						rightEffect->addStrip(strip);
+					else
+						bassEffect->addStrip(strip);
 
-		std::for_each(node->stripBegin(), node->stripEnd(),
-			[](std::shared_ptr<LightStrip>& strip) {
-				if(strip->getType() == LightStrip::Type::Analog) {
-					bulbEffect->addStrip(strip);
-				}
-			});
-	}
-	else {
-		std::cout << "[Info] New node discovered \"" << node->getName() << "\":" << std::endl;
+					analogCount++;
 
-		unsigned int analogCount = 0;
-		std::for_each(node->stripBegin(), node->stripEnd(),
-			[&analogCount](std::shared_ptr<LightStrip>& strip) {
-				switch(strip->getType()) {
-					case LightStrip::Type::Analog:
-						if(analogCount == 0)
-							rightEffect->addStrip(strip);
-						else if(analogCount == 1)
-							centerEffect->addStrip(strip);
-						else if(analogCount < 4)
-							leftEffect->addStrip(strip);
-						else
-							bulbEffect->addStrip(strip);
-						
-						analogCount++;
+					std::cout << "\tAnalog Strip (" << analogCount << ")" << std::endl;
+				break;
 
-						std::cout << "\tAnalog strip (" << analogCount << ")" << std::endl;
-					break;
+				case LightStrip::Type::Digital:
+					digitalEffect->addStrip(strip);
 
-					case LightStrip::Type::Digital:
-						digitalEffect->addStrip(strip);
-						std::cout << "\tDigital strip (" << strip->getSize() << ")" << std::endl;
-					break;
+					std::cout << "\tDigital strip (" << strip->getSize() << ")"  << std::endl;
+				break;
 
-					case LightStrip::Type::Matrix:
-						if(strip->getSize() > 768) {
-							visualizerEffect->addStrip(strip);
-						}
-						else {
-							matrixEffect->addStrip(strip);
-						}
-						std::cout << "\tMatrix strip" << std::endl;
-					break;
+				case LightStrip::Type::Matrix:
+					matrixEffect->addStrip(strip);
 
-					default:
-						std::cout << "\tUnknown strip (" << strip->getSize() << ")" << std::endl;
-					break;
-				}
-			});
-	}
+					std::cout << "\tMatrix" << std::endl;
+				break;
+				
+				default:
+					std::cout << "\tUnknown strip (" << strip->getSize() << ")" << std::endl;
+				break;
+			}
+		});
 }
 
 void slotNodeStateChange(LightNode* node, LightNode::State,

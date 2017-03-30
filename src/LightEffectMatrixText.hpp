@@ -3,23 +3,17 @@
 #include <string>
 #include <mutex>
 
-#include "ILightEffect.hpp"
+#include "LightEffect.hpp"
 #include "Color.hpp"
 
-class LightEffectMatrixText : public ILightEffect
+class LightEffectMatrixText : public LightEffect
 {
 public:
 	LightEffectMatrixText();
-
-	void setText(const std::string& text);
-	void setColor(const Color& c);
 
 private:
 	virtual void tick() override;
 	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
 
-	Color c;
-	std::string text;
-	size_t pos;
-	std::mutex mutex;
+	double pos;
 };
