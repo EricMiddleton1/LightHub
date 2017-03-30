@@ -5,9 +5,9 @@ LightEffectSoundSolid::LightEffectSoundSolid(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 		LightEffectSoundSolid::Channel _channel)
 	:	LightEffect({LightStrip::Type::Analog, LightStrip::Type::Digital},
-		{{"bass freq", 150.}, {"trebble freq", 4000.}, {"bass boost", 10.},
+		{{"bass freq", 150.}, {"trebble freq", 4000.}, {"bass boost", 0.},
 		{"trebble boost", 0.}, {"start frequency", 0.}, {"end frequency", 20000.},
-		{"db scaler", 150.}, {"db factor", 1.}, {"average factor", 0.5},
+		{"db scaler", 750.}, {"db factor", 0.5}, {"average factor", 30.},
 		{"noise floor", 50.}, {"average filter strength", 0.4}, {"min saturation", 0.7},
 		{"color filter strength", 0.8}, {"threshold", 0.}})
 	,	spectrumAnalyzer{_spectrumAnalyzer}
@@ -28,6 +28,7 @@ void LightEffectSoundSolid::tick() {
 
 		case LightEffectSoundSolid::Channel::Right:
 			renderColor(spectrumAnalyzer->getRightSpectrum());
+			std::cout << c.toString() << std::endl;
 		break;
 	}
 }
@@ -99,7 +100,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 		if(f >= fStart) {
 			float hue = (f <= bassFreq) ? 40.f*std::pow((double)i/(bassIndex-1), 4.)
 				: (45.f + 240.f * (i-bassIndex) / (binCount - bassIndex - 1));
-
+			
 			Color c = Color::HSV(hue, 1.f, 1.f);
 			double db = bin.getEnergyDB();
 
@@ -120,7 +121,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 
 			//Scale partially based on average level
 			db *= dbFactor;
-			db += avgFactor*avg;
+			//db += avgFactor*avg;
 
 			r += db * c.getRed();
 			g += db * c.getGreen();
@@ -129,6 +130,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	}
 
 	//Scale color
+	scale *= avg;
 	r *= scale;
 	g *= scale;
 	b *= scale;
@@ -153,7 +155,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	}
 
 	//Enforce saturation minimum
-	cTmp = Color::HSV(h, std::max(minSaturation, s), v);
+	cTmp = Color::HSV(h, std::max(minSaturation, s), std::min(1., avg / avgFactor));
 
 	//Filter the color
 	c.filter(cTmp, filterStrength);

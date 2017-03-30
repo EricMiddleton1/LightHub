@@ -53,7 +53,7 @@ int main() {
 	bassEffect->setParameter("end frequency", 120.);
 	bassEffect->setParameter("bass boost", 6.);
 	bassEffect->setParameter("db scaler", 200.);
-	bassEffect->setParameter("average factor", 1.);
+	bassEffect->setParameter("average factor", 40.);
 	bassEffect->setParameter("noise floor", 60.);
 	bassEffect->setParameter("average filter strength", 0.4);
 	bassEffect->setParameter("color filter strength", 0.4);
