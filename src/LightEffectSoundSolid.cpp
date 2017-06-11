@@ -20,6 +20,8 @@ void LightEffectSoundSolid::tick() {
 	switch(channel) {
 		case LightEffectSoundSolid::Channel::Left:
 			renderColor(spectrumAnalyzer->getLeftSpectrum());
+
+			//std::cout << c.toString() << std::endl;
 		break;
 
 		case LightEffectSoundSolid::Channel::Center:
@@ -34,7 +36,7 @@ void LightEffectSoundSolid::tick() {
 
 void LightEffectSoundSolid::updateStrip(std::shared_ptr<LightStrip> strip) {
 	auto buffer = strip->getBuffer();
-
+	
 	buffer->setAll(c);
 }
 
@@ -97,8 +99,18 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 			break;
 
 		if(f >= fStart) {
-			float hue = (f <= bassFreq) ? 40.f*std::pow((double)i/(bassIndex-1), 4.)
-				: (45.f + 240.f * (i-bassIndex) / (binCount - bassIndex - 1));
+			//float hue = (f <= bassFreq) ? 40.f*std::pow((double)i/(bassIndex-1), 4.)
+				//: (45.f + 240.f * (i-bassIndex) / (binCount - bassIndex - 1));
+			//float hue = 240. * i / (binCount - 1);
+			int yellowPoint = 11;
+			
+			float hue;
+			if(i < yellowPoint) {
+				hue = 60. * i / (yellowPoint-1);
+			}
+			else {
+				hue = 60. + 180.*(i-yellowPoint) / (binCount - yellowPoint - 1);
+			}
 
 			Color c = Color::HSV(hue, 1.f, 1.f);
 			double db = bin.getEnergyDB();

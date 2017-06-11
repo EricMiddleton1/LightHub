@@ -32,7 +32,7 @@ void LightEffectMatrixClock::updateStrip(std::shared_ptr<LightStrip> strip) {
 	buffer->setAll({});
 
 	unsigned int width = buffer->getWidth(),
-		height = buffer->getHeight();\
+		height = buffer->getHeight();
 	
 	unsigned int strWidth = 6 * timeStr.length() - 1,
 		strHeight = 7;

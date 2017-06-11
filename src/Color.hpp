@@ -14,6 +14,7 @@ public:
 	Color operator=(const Color& c);
 	bool operator!=(const Color& rhs) const;
 	bool operator==(const Color& rhs) const;
+	Color operator*(double rhs) const;
 
 	std::string toString() const;
 

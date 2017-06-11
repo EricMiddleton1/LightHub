@@ -66,13 +66,13 @@ protected:
 };
 
 template<typename Derived, typename Base, typename Del>
-std::unique_ptr<Derived, Del>
+std::unique_ptr<Derived>
 LightBuffer_cast(std::unique_ptr<Base, Del>&& ptr) {
 	if(Derived *result = dynamic_cast<Derived*>(ptr.get())) {
 		ptr.release();
-		return std::unique_ptr<Derived, Del>(result, std::move(ptr.get_deleter()));
+		return std::unique_ptr<Derived>(result);
 	}
 	else {
-		return std::unique_ptr<Derived, Del>(nullptr, ptr.get_deleter());
+		return std::unique_ptr<Derived>(nullptr);
 	}
 }

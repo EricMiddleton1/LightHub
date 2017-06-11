@@ -109,7 +109,18 @@ void LightEffectMatrixEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 		for(unsigned int j = 0; j < width; ++j) {
 			unsigned int x = start + i*(gap+width) + j,
 				top = bars[i]*(buffer->getHeight()-1) + 0.5;
-			float hue = 240.*i/(bars.size()-1);
+
+			int yellowPoint = 11;
+			
+			float hue;
+			if(i < yellowPoint) {
+				hue = 60. * i / (yellowPoint-1);
+			}
+			else {
+				hue = 60. + 180.*(i-yellowPoint) / (bars.size() - yellowPoint - 1);
+			}
+
+			//hue = 240.*i/(bars.size()-1);
 
 			for(unsigned int y = 0; y <= top; ++y) {
 				unsigned int yPos = (invert) ? (y) : (buffer->getHeight() - y - 1);

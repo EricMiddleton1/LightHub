@@ -32,6 +32,10 @@ bool Color::operator==(const Color& rhs) const {
 	return res;
 }
 
+Color Color::operator*(double rhs) const {
+	return {r*rhs, g*rhs, b*rhs};
+}
+
 std::string Color::toString() const {
 	return "(" + std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ")";
 }
