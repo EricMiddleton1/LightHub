@@ -8,6 +8,7 @@ LightEffectSoundSolid::LightEffectSoundSolid(
 		{{"bass freq", 150.}, {"trebble freq", 4000.}, {"bass boost", 10.},
 		{"trebble boost", 0.}, {"start frequency", 0.}, {"end frequency", 20000.},
 		{"db scaler", 150.}, {"db factor", 1.}, {"average factor", 0.5},
+		{"change factor", 0.},
 		{"noise floor", 50.}, {"average filter strength", 0.4}, {"min saturation", 0.7},
 		{"color filter strength", 0.8}, {"threshold", 0.}})
 	,	spectrumAnalyzer{_spectrumAnalyzer}
@@ -43,6 +44,7 @@ void LightEffectSoundSolid::updateStrip(std::shared_ptr<LightStrip> strip) {
 void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	static int bassIndex = -1, endIndex = -1;
 	static double avg = 0.;
+	static Spectrum prevSpectrum(0, 0, 0);
 
 	double bassFreq = getParameter("bass freq").getValue().getNumber();
 	double trebbleFreq = getParameter("trebble freq").getValue().getNumber();
@@ -53,6 +55,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	double dbScaler = getParameter("db scaler").getValue().getNumber();
 	double dbFactor = getParameter("db factor").getValue().getNumber();
 	double avgFactor = getParameter("average factor").getValue().getNumber();
+	double changeFactor = getParameter("change factor").getValue().getNumber();
 	double noiseFloor = getParameter("noise floor").getValue().getNumber();
 	double avgFilterStrength = getParameter("average filter strength").getValue().getNumber();
 	double minSaturation = getParameter("min saturation").getValue().getNumber();
@@ -66,11 +69,12 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 		for(bassIndex = 0; (bassIndex < binCount) &&
 			(spectrum.getByIndex(bassIndex).getFreqCenter() <= bassFreq); ++bassIndex);
 		std::cout << "Bass Index: " << bassIndex << std::endl;
-	}
-	if(endIndex == -1) {
+		
 		for(endIndex = 0; (endIndex < binCount) &&
 			(spectrum.getByIndex(endIndex).getFreqCenter() <= fEnd); ++endIndex);
 		std::cout << "End Index: " << endIndex << std::endl;
+
+		prevSpectrum = spectrum;
 	}
 
 	//Compute average
@@ -95,6 +99,8 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 		FrequencyBin& bin = spectrum.getByIndex(i);
 		double f = bin.getFreqCenter();
 
+
+
 		if(f > fEnd)
 			break;
 
@@ -113,7 +119,13 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 			}
 
 			Color c = Color::HSV(hue, 1.f, 1.f);
+
 			double db = bin.getEnergyDB();
+			
+			FrequencyBin& prevBin = prevSpectrum.getByIndex(i);
+			double change = db - prevBin.getEnergyDB();
+			if(change < 0)
+				change = 0;
 
 			//Bass boost
 			if(f <= bassFreq)
@@ -132,7 +144,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 
 			//Scale partially based on average level
 			db *= dbFactor;
-			db += avgFactor*avg;
+			db += avgFactor*avg + changeFactor*change;
 
 			r += db * c.getRed();
 			g += db * c.getGreen();
@@ -169,4 +181,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 
 	//Filter the color
 	c.filter(cTmp, filterStrength);
+
+	//Update previous spectrum
+	prevSpectrum = spectrum;
 }

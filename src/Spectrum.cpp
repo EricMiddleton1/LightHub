@@ -201,4 +201,6 @@ std::vector<FrequencyBin>::iterator Spectrum::end() {
 	return std::end(bins);
 }
 
-
+void FrequencyBin::filter(const FrequencyBin& other, double alpha) {
+	energy = energy*(1.-alpha) + other.energy*alpha;
+}

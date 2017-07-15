@@ -52,14 +52,16 @@ int main() {
 
 	//leftEffect->setParameter("start frequency", 80.);
 	//rightEffect->setParameter("start frequency", 80.);
-	leftEffect->setParameter("bass boost", 0.);
-	rightEffect->setParameter("bass boost", 0.);
-	leftEffect->setParameter("average filter strength", 0.5);
-	rightEffect->setParameter("average filter strength", 0.5);
-	leftEffect->setParameter("average factor", 1.5);
-	rightEffect->setParameter("average factor", 1.5);
-	leftEffect->setParameter("db scaler", 200.);
-	rightEffect->setParameter("db scaler", 200.);
+	//leftEffect->setParameter("bass boost", 0.);
+	//rightEffect->setParameter("bass boost", 0.);
+	//leftEffect->setParameter("average filter strength", 0.5);
+	//rightEffect->setParameter("average filter strength", 0.5);
+	//leftEffect->setParameter("average factor", 1.5);
+	//rightEffect->setParameter("average factor", 1.5);
+	//leftEffect->setParameter("db scaler", 200.);
+	//rightEffect->setParameter("db scaler", 200.);
+	//leftEffect->setParameter("change factor", 0.5);
+	//rightEffect->setParameter("change factor", 0.5);
 	
 	bassEffect->setParameter("bass freq", 120.);
 	bassEffect->setParameter("end frequency", 120.);

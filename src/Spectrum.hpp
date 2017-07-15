@@ -17,6 +17,8 @@ public:
 	//Operators
 	FrequencyBin& operator=(const double energy);
 	FrequencyBin& operator+=(const double energy);
+	FrequencyBin& operator+(const FrequencyBin&);
+	FrequencyBin& operator*(const double scale);
 
 	double getFreqStart() const;
 	double getFreqEnd() const;
@@ -32,6 +34,8 @@ public:
 
 	void addEnergy(const double energy);
 	void addEnergyDB(const double energyDB);
+
+	void filter(const FrequencyBin& other, double alpha);
 
 private:
 	friend class Spectrum;
