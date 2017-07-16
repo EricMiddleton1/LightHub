@@ -23,9 +23,6 @@ Display::Display()
 		rawImage.width = monitors.begin()->Width;
 		rawImage.height = monitors.begin()->Height;
 
-		std::cout << "Display(): " << rawImage.width << ", " << rawImage.height
-			<< std::endl;
-
 		ready = true;
 		cv.notify_one();
 
@@ -45,7 +42,10 @@ Display::Display()
 }
 
 Display::RawImage::RawImage()
-	:	data{nullptr} {
+	:	data{nullptr} 
+	,	topOffset{0}
+	,	bottomOffset{0}
+	,	offsetTime{0} {
 }
 
 Display::RawImage::~RawImage() {
@@ -64,6 +64,69 @@ void Display::RawImage::set(const SL::Screen_Capture::Image& img) {
 
 	SL::Screen_Capture::Extract(img, reinterpret_cast<char*>(data),
 		height*SL::Screen_Capture::RowStride(img));
+
+	//Check top and bottom offsets
+	auto newTopOffset = calcTopOffset();
+	auto newBottomOffset = calcBottomOffset();
+
+
+
+	if(newTopOffset <= topOffset) {
+		topOffset = newTopOffset;
+		offsetTime = 0;
+	}
+	if(newBottomOffset <= bottomOffset) {
+		bottomOffset = newBottomOffset;
+		offsetTime = 0;
+	}
+
+	if( (newTopOffset > topOffset) && (newBottomOffset > bottomOffset) ) {
+
+		offsetTime++;
+
+		if(offsetTime >= MAX_OFFSET_TIME) {
+		std::cout << "[Info] New offsets: " << newTopOffset << ", "
+			<< newBottomOffset <<  " (from " << topOffset << ", " << bottomOffset
+			<< ")" << std::endl;
+
+			offsetTime = 0;
+			topOffset = newTopOffset;
+			bottomOffset = newBottomOffset;
+		}
+	}
+}
+
+Display::Coordinate Display::RawImage::calcTopOffset() const {
+	Coordinate y;
+	for(y = 0; y < MAX_OFFSET; ++y) {
+		if(!blackRow(y)) {
+			break;
+		}
+	}
+
+	return y;
+}
+
+Display::Coordinate Display::RawImage::calcBottomOffset() const {
+	Coordinate y;
+	for(y = 0; y < MAX_OFFSET; ++y) {
+		if(!blackRow(height-y-1)) {
+			break;
+		}
+	}
+
+	return y;
+}
+
+bool Display::RawImage::blackRow(Coordinate y) const {
+	for(Coordinate x = 0; x < width; ++x) {
+		auto index = getIndex(x, y);
+		if( (data[index] > 32) || (data[index+1] > 32) || (data[index+2] > 32) ) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 Display::Coordinate Display::getWidth() const {
@@ -72,6 +135,14 @@ Display::Coordinate Display::getWidth() const {
 
 Display::Coordinate Display::getHeight() const {
 	return rawImage.height;
+}
+
+Display::Coordinate Display::getTopOffset() const {
+	return rawImage.topOffset;
+}
+
+Display::Coordinate Display::getBottomOffset() const {
+	return rawImage.bottomOffset;
 }
 
 Color Display::get(Coordinate x, Coordinate y) const {
@@ -92,8 +163,8 @@ Color Display::get(Coordinate x, Coordinate y) const {
 	return {rawImage.data[index+2], rawImage.data[index+1], rawImage.data[index]};
 }
 
-int Display::getIndex(Coordinate x, Coordinate y) const {
-	return y*rawImage.width*4 + x*4;
+int Display::RawImage::getIndex(Coordinate x, Coordinate y) const {
+	return y*width*4 + x*4;
 }
 
 Color Display::getAverageColor(Coordinate x1, Coordinate y1, Coordinate x2,
@@ -109,7 +180,7 @@ Color Display::getAverageColor(Coordinate x1, Coordinate y1, Coordinate x2,
 
 	for(int j = y1; j < y2; ++j) {
 		for(int i = x1; i < x2; ++i) {
-			auto index = getIndex(i, j);
+			auto index = rawImage.getIndex(i, j);
 
 			r += rawImage.data[index+2];
 			g += rawImage.data[index+1];

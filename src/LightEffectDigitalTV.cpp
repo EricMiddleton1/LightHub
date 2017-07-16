@@ -17,8 +17,12 @@ void LightEffectDigitalTV::tick() {
 	int depth = getParameter("depth").getValue().getInt();
 	auto filter = getParameter("filter").getValue().getDouble();
 
+	auto y0 = display->getTopOffset();
+	auto height = display->getHeight() - display->getBottomOffset();
+	auto adjHeight = height - y0;
+
 	for(int x = 0; x < stripWidth; ++x) {
-		edge[x].filter(display->getAverageColor(x*width/stripWidth, 0,
+		edge[x].filter(display->getAverageColor(x*width/stripWidth, y0,
 			(x+1)*width/stripWidth, depth), filter);
 		edge[2*stripWidth+stripHeight-x-1].filter(
 			display->getAverageColor(x*width/stripWidth, height-depth,
@@ -26,9 +30,11 @@ void LightEffectDigitalTV::tick() {
 	}
 	for(int y = 0; y < stripHeight; ++y) {
 		edge[stripWidth+y].filter(display->getAverageColor(
-			width-depth, y*height/stripHeight, width, (y+1)*height/stripHeight), filter);
+			width-depth, y0 + y*adjHeight/stripHeight, width,
+			y0 + (y+1)*adjHeight/stripHeight), filter);
 		edge[2*stripWidth+2*stripHeight-y-1].filter(
-			display->getAverageColor(0, y*height/stripHeight, depth, (y+1)*height/stripHeight),
+			display->getAverageColor(0, y0 + y*adjHeight/stripHeight, depth,
+				y0 + (y+1)*adjHeight/stripHeight),
 			filter);
 	}
 }
