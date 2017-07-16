@@ -10,7 +10,7 @@ LightEffectMatrixText::LightEffectMatrixText()
 }
 
 void LightEffectMatrixText::tick() {
-	pos += getParameter("speed").getValue().getNumber() / 50.;
+	pos += getParameter("speed").getValue().getDouble() / 50.;
 
 	//Handle overflow
 	if(pos < 0.)
@@ -22,7 +22,7 @@ void LightEffectMatrixText::updateStrip(std::shared_ptr<LightStrip> strip) {
 	
 	std::string text(getParameter("text").getValue().getString());
 	Color c(getParameter("color").getValue().getColor());
-	unsigned int height = std::min(getParameter("height").getValue().getNumber(),
+	unsigned int height = std::min(getParameter("height").getValue().getDouble(),
 		buffer->getHeight() - 7.);
 
 	size_t curPos = (size_t)pos % (6*text.length() + buffer->getWidth());

@@ -16,7 +16,8 @@
 #include "LightEffectMatrixEQ.hpp"
 #include "LightEffectMatrixText.hpp"
 #include "LightEffectMatrixClock.hpp"
-#include "LightEffectLinearClock.hpp"
+#include "LightEffectDigitalTV.hpp"
+#include "LightEffectMatrixTV.hpp"
 
 #define HUB_TO_NODE_PORT	54923
 #define NODE_TO_HUB_PORT	54924
@@ -28,6 +29,7 @@ void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 std::shared_ptr<LightEffect> leftEffect, centerEffect, rightEffect, bassEffect;
 std::shared_ptr<LightEffect> digitalEffect;
 std::shared_ptr<LightEffect> matrixEffect, visualizerEffect;
+std::shared_ptr<LightEffect> tvEffect, matrixTVEffect;
 
 void printNodes(Rhopalia&);
 
@@ -75,7 +77,15 @@ int main() {
 
 	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
 	//digitalEffect = std::make_shared<LightEffectLinearClock>();
+	//matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
+
+	auto display = std::make_shared<Display>();
+	std::cout << "[Info] Display (" << display->getWidth() << ", " << display->getHeight()
+		<< ")" << std::endl;
+
+	tvEffect = std::make_shared<LightEffectDigitalTV>(display);
+	matrixTVEffect = std::make_shared<LightEffectMatrixTV>(display);
 
 	Rhopalia controller;
 
@@ -87,6 +97,8 @@ int main() {
 	controller.addEffect(bassEffect);
 	controller.addEffect(digitalEffect);
 	controller.addEffect(matrixEffect);
+	controller.addEffect(tvEffect);
+	controller.addEffect(matrixTVEffect);
 	
 	//Start the audio device
 	audioDevice->startStream();
@@ -132,13 +144,15 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 				break;
 
 				case LightStrip::Type::Digital:
-					digitalEffect->addStrip(strip);
+					//digitalEffect->addStrip(strip);
+					tvEffect->addStrip(strip);
 
 					std::cout << "\tDigital strip (" << strip->getSize() << ")"  << std::endl;
 				break;
 
 				case LightStrip::Type::Matrix:
-					matrixEffect->addStrip(strip);
+					//matrixEffect->addStrip(strip);
+					matrixTVEffect->addStrip(strip);
 
 					std::cout << "\tMatrix" << std::endl;
 				break;

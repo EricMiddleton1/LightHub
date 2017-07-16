@@ -16,9 +16,10 @@ RCOMPILE_FLAGS = -D NDEBUG
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
-INCLUDES = -I $(SRC_PATH)
+INCLUDES = -I $(SRC_PATH) -Iscreen_capture_lite/include
 # General linker settings
-LINK_FLAGS = -lboost_system -lpthread -lportaudio -lfftw3 -g
+LINK_FLAGS = -Lscreen_capture_lite/build/src -lboost_system -lpthread -lportaudio \
+-lfftw3 -llibScreen_Capture -lX11 -lXinerama -lXext -lXfixes -g
 # Additional release-specific linker settings
 RLINK_FLAGS =
 # Additional debug-specific linker settings

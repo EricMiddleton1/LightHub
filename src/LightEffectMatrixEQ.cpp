@@ -9,11 +9,11 @@
 LightEffectMatrixEQ::LightEffectMatrixEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
 	:	LightEffect({LightStrip::Type::Matrix},
-		{{"invert", false}, {"band count",
+		{{"invert", false}, {"multiplier", 1.2}, {"band count",
 			(double)_spectrumAnalyzer->getLeftSpectrum().getBinCount(),
 			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
-	,	heights(getParameter("band count").getValue().getNumber()) {
+	,	heights(getParameter("band count").getValue().getDouble()) {
 	
 }
 
@@ -26,7 +26,7 @@ void LightEffectMatrixEQ::tick() {
 
 	const double MIN_FLOOR = 50.;
 
-	unsigned int bandCount = getParameter("band count").getValue().getNumber();
+	unsigned int bandCount = getParameter("band count").getValue().getDouble();
 
 	if(bandCount != heights.size()) {
 		heights = std::vector<double>(bandCount);
@@ -107,8 +107,15 @@ void LightEffectMatrixEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 
 	for(unsigned int i = 0; i < bars.size(); ++i) {
 		for(unsigned int j = 0; j < width; ++j) {
-			unsigned int x = start + i*(gap+width) + j,
-				top = bars[i]*(buffer->getHeight()-1) + 0.5;
+			unsigned int x = start + i*(gap+width) + j;
+			double height = bars[i]*(buffer->getHeight())
+				*getParameter("multiplier").getValue().getDouble();
+			if(height >= (buffer->getHeight()-1)) {
+				height = buffer->getHeight()-1;
+			}
+
+			int top = height;
+			double frac = height - top;
 
 			int yellowPoint = 11;
 			
@@ -125,8 +132,12 @@ void LightEffectMatrixEQ::updateStrip(std::shared_ptr<LightStrip> strip) {
 			for(unsigned int y = 0; y <= top; ++y) {
 				unsigned int yPos = (invert) ? (y) : (buffer->getHeight() - y - 1);
 
+				double value = (y == top) ? frac : 1.;
+
 				buffer->setColor(x, yPos,
-					Color::HSV(hue, 1.f, std::pow(1.f - 1.0f*y / top, 1.0)));
+					Color::HSV(hue, 1.f, value));
+				//buffer->setColor(x, yPos,
+					//Color::HSV(hue, 1.f, std::pow(1.f - 1.0f*y / top, 1.0)));
 			}
 		}
 	}

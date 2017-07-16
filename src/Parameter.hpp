@@ -11,13 +11,15 @@ class Value
 {
 public:
 	enum class Type {
-		Number = 0,
+		Int = 0,
+		Double,
 		Bool,
 		Color,
 		String
 	};
-
-	Value(double num);
+	
+	Value(int Int);
+	Value(double Double);
 	Value(bool bl);
 	Value(const Color& c);
 	Value(const std::string& str);
@@ -25,17 +27,20 @@ public:
 
 	Type getType() const;
 	
-	double getNumber() const;
+	int getInt() const;
+	double getDouble() const;
 	bool getBool() const;
 	Color getColor() const;
 	std::string getString() const;
 
-	void set(double num);
+	void set(int Int);
+	void set(double Double);
 	void set(const std::string& str);
 
 private:
 	Type type;
-	double num;
+	int Int;
+	double Double;
 	bool bl;
 	Color c;
 	std::string str;

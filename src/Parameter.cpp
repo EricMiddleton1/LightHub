@@ -1,9 +1,14 @@
 #include "Parameter.hpp"
 
 
-Value::Value(double _num)
-	:	type{Type::Number}
-	,	num{_num} {
+Value::Value(int _Int)
+	:	type{Type::Int}
+	,	Int{_Int} {
+}
+
+Value::Value(double _Double)
+	:	type{Type::Double}
+	,	Double{_Double} {
 }
 
 Value::Value(bool _bl)
@@ -28,17 +33,25 @@ Value::Type Value::getType() const {
 	return type;
 }
 
-double Value::getNumber() const {
-	if(type != Type::Number) {
-		throw std::runtime_error("Value::getNumber: Value is not of type Number");
+int Value::getInt() const {
+	if(type != Type::Int) {
+		throw std::runtime_error("Value::getInt: Value is not of type Int");
 	}
 
-	return num;
+	return Int;
+}
+
+double Value::getDouble() const {
+	if(type != Type::Double) {
+		throw std::runtime_error("Value::getDouble: Value is not of type Double");
+	}
+
+	return Double;
 }
 
 bool Value::getBool() const {
 	if(type != Type::Bool) {
-		throw std::runtime_error("Value::getNumber: Value is not of type Bool");
+		throw std::runtime_error("Value::getBool: Value is not of type Bool");
 	}
 
 	return bl;
@@ -46,7 +59,7 @@ bool Value::getBool() const {
 
 Color Value::getColor() const {
 	if(type != Type::Color) {
-		throw std::runtime_error("Value::getNumber: Value is not of type Color");
+		throw std::runtime_error("Value::getColor: Value is not of type Color");
 	}
 
 	return c;
@@ -60,12 +73,21 @@ std::string Value::getString() const {
 	return str;
 }
 
-void Value::set(double _num) {
-	if(type != Type::Number) {
-		throw std::runtime_error("Value::set(double): Value is not of type Number");
+void Value::set(int _Int) {
+	if(type != Type::Int) {
+		throw std::runtime_error("Value::set(int): Value is not of type Int");
 	}
 
-	num = _num;
+	Int = _Int;
+}
+
+
+void Value::set(double _Double) {
+	if(type != Type::Double) {
+		throw std::runtime_error("Value::set(double): Value is not of type Double");
+	}
+
+	Double = _Double;
 }
 
 void Value::set(const std::string& _str) {
@@ -143,10 +165,10 @@ void Parameter::setValue(const Value& _val) {
 
 Parameter::ValidationFunction Parameter::ValidatorRange(double _min, double _max) {
 	return [_min, _max](const Value& val) {
-		if(val.getType() != Value::Type::Number) {
+		if(val.getType() != Value::Type::Double) {
 			return std::string("Value must be a number");
 		}
-		else if(val.getNumber() < _min || val.getNumber() > _max) {
+		else if(val.getDouble() < _min || val.getDouble() > _max) {
 			return "Value must be in range [" + std::to_string(_min) + ", " +
 				std::to_string(_max) + "]";
 		}
@@ -158,10 +180,10 @@ Parameter::ValidationFunction Parameter::ValidatorRange(double _min, double _max
 
 Parameter::ValidationFunction Parameter::ValidatorGreater(double _min) {
 	return [_min](const Value& val) {
-		if(val.getType() != Value::Type::Number) {
+		if(val.getType() != Value::Type::Double) {
 			return std::string("Value must be a number");
 		}
-		else if(val.getNumber() <= _min) {
+		else if(val.getDouble() <= _min) {
 			return "Value must be greater than " + std::to_string(_min);
 		}
 		else {
@@ -172,10 +194,10 @@ Parameter::ValidationFunction Parameter::ValidatorGreater(double _min) {
 
 Parameter::ValidationFunction Parameter::ValidatorLess(double _max) {
 	return [_max](const Value& val) {
-		if(val.getType() != Value::Type::Number) {
+		if(val.getType() != Value::Type::Double) {
 			return std::string("Value must be a number");
 		}
-		else if(val.getNumber() >= _max) {
+		else if(val.getDouble() >= _max) {
 			return "Value must be less than " + std::to_string(_max);
 		}
 		else {

@@ -46,21 +46,21 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	static double avg = 0.;
 	static Spectrum prevSpectrum(0, 0, 0);
 
-	double bassFreq = getParameter("bass freq").getValue().getNumber();
-	double trebbleFreq = getParameter("trebble freq").getValue().getNumber();
-	double bassBoost = getParameter("bass boost").getValue().getNumber();
-	double trebbleBoost = getParameter("trebble boost").getValue().getNumber();
-	double fStart = getParameter("start frequency").getValue().getNumber();
-	double fEnd = getParameter("end frequency").getValue().getNumber();
-	double dbScaler = getParameter("db scaler").getValue().getNumber();
-	double dbFactor = getParameter("db factor").getValue().getNumber();
-	double avgFactor = getParameter("average factor").getValue().getNumber();
-	double changeFactor = getParameter("change factor").getValue().getNumber();
-	double noiseFloor = getParameter("noise floor").getValue().getNumber();
-	double avgFilterStrength = getParameter("average filter strength").getValue().getNumber();
-	double minSaturation = getParameter("min saturation").getValue().getNumber();
-	double filterStrength = getParameter("color filter strength").getValue().getNumber();
-	double threshold = getParameter("threshold").getValue().getNumber();
+	double bassFreq = getParameter("bass freq").getValue().getDouble();
+	double trebbleFreq = getParameter("trebble freq").getValue().getDouble();
+	double bassBoost = getParameter("bass boost").getValue().getDouble();
+	double trebbleBoost = getParameter("trebble boost").getValue().getDouble();
+	double fStart = getParameter("start frequency").getValue().getDouble();
+	double fEnd = getParameter("end frequency").getValue().getDouble();
+	double dbScaler = getParameter("db scaler").getValue().getDouble();
+	double dbFactor = getParameter("db factor").getValue().getDouble();
+	double avgFactor = getParameter("average factor").getValue().getDouble();
+	double changeFactor = getParameter("change factor").getValue().getDouble();
+	double noiseFloor = getParameter("noise floor").getValue().getDouble();
+	double avgFilterStrength = getParameter("average filter strength").getValue().getDouble();
+	double minSaturation = getParameter("min saturation").getValue().getDouble();
+	double filterStrength = getParameter("color filter strength").getValue().getDouble();
+	double threshold = getParameter("threshold").getValue().getDouble();
 
 	double r = 0., g = 0., b = 0.;
 	size_t binCount = spectrum.getBinCount();
