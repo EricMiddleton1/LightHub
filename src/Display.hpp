@@ -30,7 +30,8 @@ private:
 	
 	struct RawImage {
 		const int MAX_OFFSET = 200;
-		const int MAX_OFFSET_TIME = 30;
+		const int MAX_OFFSET_TIME = 60;
+		const int BLACK_LEVEL = 16;
 
 		RawImage();
 		~RawImage();

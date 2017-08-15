@@ -144,15 +144,15 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 				break;
 
 				case LightStrip::Type::Digital:
-					//digitalEffect->addStrip(strip);
-					tvEffect->addStrip(strip);
+					digitalEffect->addStrip(strip);
+					//tvEffect->addStrip(strip);
 
 					std::cout << "\tDigital strip (" << strip->getSize() << ")"  << std::endl;
 				break;
 
 				case LightStrip::Type::Matrix:
-					//matrixEffect->addStrip(strip);
-					matrixTVEffect->addStrip(strip);
+					matrixEffect->addStrip(strip);
+					//matrixTVEffect->addStrip(strip);
 
 					std::cout << "\tMatrix" << std::endl;
 				break;

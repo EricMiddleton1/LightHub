@@ -23,7 +23,7 @@ void LightEffectDigitalTV::tick() {
 
 	for(int x = 0; x < stripWidth; ++x) {
 		edge[x].filter(display->getAverageColor(x*width/stripWidth, y0,
-			(x+1)*width/stripWidth, depth), filter);
+			(x+1)*width/stripWidth, y0 + depth), filter);
 		edge[2*stripWidth+stripHeight-x-1].filter(
 			display->getAverageColor(x*width/stripWidth, height-depth,
 			(x+1)*width/stripWidth, height), filter);

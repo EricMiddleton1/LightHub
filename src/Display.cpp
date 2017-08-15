@@ -71,13 +71,19 @@ void Display::RawImage::set(const SL::Screen_Capture::Image& img) {
 
 
 
-	if(newTopOffset <= topOffset) {
+	if(newTopOffset < topOffset) {
+		std::cout << "[Info] New offsets: " << newTopOffset << ", "
+			<< newBottomOffset <<  " (from " << topOffset << ", " << bottomOffset
+			<< ")" << std::endl;
+
 		topOffset = newTopOffset;
-		offsetTime = 0;
 	}
-	if(newBottomOffset <= bottomOffset) {
+	if(newBottomOffset < bottomOffset) {
+		std::cout << "[Info] New offsets: " << newTopOffset << ", "
+			<< newBottomOffset <<  " (from " << topOffset << ", " << bottomOffset
+			<< ")" << std::endl;
+
 		bottomOffset = newBottomOffset;
-		offsetTime = 0;
 	}
 
 	if( (newTopOffset > topOffset) && (newBottomOffset > bottomOffset) ) {
@@ -93,6 +99,9 @@ void Display::RawImage::set(const SL::Screen_Capture::Image& img) {
 			topOffset = newTopOffset;
 			bottomOffset = newBottomOffset;
 		}
+	}
+	else {
+		offsetTime = 0;
 	}
 }
 
@@ -121,7 +130,8 @@ Display::Coordinate Display::RawImage::calcBottomOffset() const {
 bool Display::RawImage::blackRow(Coordinate y) const {
 	for(Coordinate x = 0; x < width; ++x) {
 		auto index = getIndex(x, y);
-		if( (data[index] > 32) || (data[index+1] > 32) || (data[index+2] > 32) ) {
+		if( (data[index] > BLACK_LEVEL) || (data[index+1] > BLACK_LEVEL)
+			|| (data[index+2] > BLACK_LEVEL) ) {
 			return false;
 		}
 	}
@@ -189,6 +199,13 @@ Color Display::getAverageColor(Coordinate x1, Coordinate y1, Coordinate x2,
 	}
 
 	unsigned long long count = (x2-x1+1) * (y2-y1+1);
+
+	if(count == 0) {
+		std::cout << "[Error] Display::getAverageColor: Divide by 0 ("
+			<< x1 << ", " << x2 << ", " << y1 << ", " << y2 << ")"
+			<< std::endl;
+		return {};
+	}
 
 	return {r/count, g/count, b/count};
 }
