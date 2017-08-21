@@ -4,18 +4,19 @@
 #include "LightStripDigital.hpp"
 #include "LightStripMatrix.hpp"
 
+#include <chrono>
+
 using namespace std;
 
-LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort, DiscoveryMethod_e _discoveryMethod,
+LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort,
 	uint32_t _discoveryPeriod)
 	:	sendSocket(ioService, boost::asio::ip::udp::v4())
 	,	recvSocket(ioService, boost::asio::ip::udp::endpoint(
 			boost::asio::ip::udp::v4(), _recvPort))
-	,	discoveryTimer(ioService)	{
-	sendPort = _sendPort;
-	recvPort = _recvPort;
-	discoveryMethod = _discoveryMethod;
-	discoveryPeriod = _discoveryPeriod;
+	,	sendPort{_sendPort}
+	,	recvPort{_recvPort}
+	,	discoveryTimer(ioService, std::chrono::milliseconds(_discoveryPeriod),
+		[this](){ discover(); })	{
 
 	//Allow the socket to send broadcast packets
 	sendSocket.set_option(boost::asio::socket_base::broadcast(true));
@@ -39,14 +40,7 @@ LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort, DiscoveryMethod_e _di
 		"discovery" << std::endl;
 
 	//Do an initial node discovery
-	discover(discoveryMethod);
-
-	//Start the timer for subsequent node discovery
-	discoveryTimer.expires_from_now(
-		boost::posix_time::milliseconds(discoveryPeriod));
-	
-	discoveryTimer.async_wait(std::bind(&LightHub::handleDiscoveryTimer, this,
-		std::placeholders::_1));
+	ioService.post([this]() { discover(); });
 }
 
 LightHub::~LightHub() {
@@ -60,34 +54,20 @@ LightHub::~LightHub() {
 void LightHub::threadRoutine() {
 	//Run all async tasks
 	ioService.run();
-
-	std::cout << "[Info] LightHub: Thread closing" << std::endl;
 }
 
 
-void LightHub::discover(LightHub::DiscoveryMethod_e method) {
+void LightHub::discover() {
+	boost::asio::ip::udp::endpoint endpoint(
+		boost::asio::ip::address_v4::broadcast(), sendPort);
 
-	switch(method) {
-		case SWEEP:
-			std::cout << "[Error] LightHub::discover method 'SWEEP' "
-				<< "not implemented" << std::endl;
-		break;
-
-		case BROADCAST:
-		{
-			boost::asio::ip::udp::endpoint endpoint(
-				boost::asio::ip::address_v4::broadcast(), sendPort);
-
-			//Send ping broadcast packet
-			sendSocket.async_send_to(boost::asio::buffer(
-				Packet::Ping().asDatagram()),	//Construct ping packet
-				endpoint,	//Broadcast endpoint
-				boost::bind(&LightHub::handleSendBroadcast, this,
-					boost::asio::placeholders::error,
-					boost::asio::placeholders::bytes_transferred));
-		}
-		break;
-	}
+	//Send ping broadcast packet
+	sendSocket.async_send_to(boost::asio::buffer(
+		Packet::Ping().asDatagram()),	//Construct ping packet
+		endpoint,	//Broadcast endpoint
+		boost::bind(&LightHub::handleSendBroadcast, this,
+			boost::asio::placeholders::error,
+			boost::asio::placeholders::bytes_transferred));
 }
 
 std::shared_ptr<LightNode> LightHub::getNodeByName(const std::string& name) {
@@ -153,23 +133,6 @@ void LightHub::handleSendBroadcast(const boost::system::error_code& ec,
 		std::cout << "[Error] Failed to send broadcast ping message: "
 			<< ec.message() << std::endl;
 	}
-}
-
-void LightHub::handleDiscoveryTimer(const boost::system::error_code& ec) {
-	if(ec) {
-		std::cout << "[Error] LightHub::handleDiscoveryTimer: "
-			<< ec.message() << std::endl;
-	}
-	else {
-		//Perform discovery
-		discover(discoveryMethod);
-	}
-
-	//Reset timer
-	discoveryTimer.expires_from_now(
-		boost::posix_time::milliseconds(discoveryPeriod));
-	discoveryTimer.async_wait(std::bind(&LightHub::handleDiscoveryTimer, this,
-		std::placeholders::_1));
 }
 
 void LightHub::startListening() {
@@ -264,7 +227,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 						std::string name(payload.begin() + 3 + 2*(digitalCount+matrixCount),
 							payload.end());
 						
-						auto newNode = std::make_shared<LightNode>(name, strips,
+						auto newNode = std::make_shared<LightNode>(ioService, name, strips,
 							receiveEndpoint.address(), sendPort);
 
 						//Store the new node

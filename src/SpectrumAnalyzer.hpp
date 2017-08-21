@@ -23,9 +23,6 @@ public:
 	~SpectrumAnalyzer();
 
 
-	void removeListener(std::function<void(SpectrumAnalyzer*,
-		std::shared_ptr<Spectrum>, std::shared_ptr<Spectrum>)>);
-
 	std::shared_ptr<AudioDevice> getAudioDevice();
 
 	Spectrum getLeftSpectrum() const;
@@ -47,10 +44,11 @@ private:
 	std::thread asyncThread;
 
 	Spectrum leftSpectrum, rightSpectrum;
+	mutable std::mutex spectrumMutex;
 
 	//Audio sample buffers
 	std::vector<int16_t> leftBuffer, rightBuffer;
-//	std::mutex bufferMutex;
+	std::mutex bufferMutex;
 
 	//FFT stuff
 	fftw_complex *fftIn, *fftOut;

@@ -83,14 +83,20 @@ std::shared_ptr<AudioDevice> SpectrumAnalyzer::getAudioDevice() {
 }
 
 Spectrum SpectrumAnalyzer::getLeftSpectrum() const {
+	std::unique_lock<std::mutex> spectrumLock(spectrumMutex);
+
 	return leftSpectrum;
 }
 
 Spectrum SpectrumAnalyzer::getRightSpectrum() const {
+	std::unique_lock<std::mutex> spectrumLock(spectrumMutex);
+
 	return rightSpectrum;
 }
 
 Spectrum SpectrumAnalyzer::getMonoSpectrum() const {
+	std::unique_lock<std::mutex> spectrumLock(spectrumMutex);
+
 	auto mono = leftSpectrum + rightSpectrum;
 
 	//Average
@@ -103,6 +109,8 @@ Spectrum SpectrumAnalyzer::getMonoSpectrum() const {
 }
 
 Spectrum SpectrumAnalyzer::getCenterSpectrum() const {
+	std::unique_lock<std::mutex> spectrumLock(spectrumMutex);
+
 	auto center = leftSpectrum;
 /*
 	auto& leftBin = center.getByIndex(2);
@@ -125,6 +133,8 @@ Spectrum SpectrumAnalyzer::getCenterSpectrum() const {
 }
 
 void SpectrumAnalyzer::cbAudio(const int16_t* left, const int16_t* right) {
+	std::unique_lock<std::mutex> bufferLock(bufferMutex);
+
 	//Shift the samples forward by 1 chunk size
 	std::memmove(leftBuffer.data(), &leftBuffer[chunkSize],
 		sizeof(int16_t) * (blockSize - chunkSize));
@@ -150,14 +160,17 @@ void SpectrumAnalyzer::threadRoutine() {
 void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 	std::vector<int16_t> right) {
 
-	//This value will be used often
 	double sampleRate = audioDevice->getSampleRate();
 	
-	//Fill FFT input buffer
-	for(unsigned int i = 0; i < blockSize; i++) {
-		fftIn[i][0] = fftWindow[i] *
-			((double)left[i] / INT16_MAX / blockSize);
-		fftIn[i][1] = 0.; //Imaginary
+	{
+		std::unique_lock<std::mutex> bufferLock(bufferMutex);
+		
+		//Fill FFT input buffer
+		for(unsigned int i = 0; i < blockSize; i++) {
+			fftIn[i][0] = fftWindow[i] *
+				((double)left[i] / INT16_MAX / blockSize);
+			fftIn[i][1] = 0.; //Imaginary
+		}
 	}
 
 	//Do FFT on left samples
@@ -165,7 +178,6 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 
 	//Fill left spectrum with new FFT data
 	leftSpectrum.clear();
-
 
 	for(unsigned int i = 0; i < blockSize/2; ++i) {
 		double f = sampleRate * i / blockSize; //Frequency of fft bin
@@ -188,10 +200,15 @@ void SpectrumAnalyzer::fftRoutine(std::vector<int16_t> left,
 	}
 	
 	//Now do right FFT
-	//Copy real audio data into complex fft input array and scale to [-1., 1.]
-	for(unsigned int i = 0; i < blockSize; i++) {
-		fftIn[i][0] = fftWindow[i] * ((double)right[i] / INT16_MAX / blockSize); //Real
-		fftIn[i][1] = 0.; //Imaginary
+
+	{
+		std::unique_lock<std::mutex> bufferLock(bufferMutex);
+
+		//Copy real audio data into complex fft input array and scale to [-1., 1.]
+		for(unsigned int i = 0; i < blockSize; i++) {
+			fftIn[i][0] = fftWindow[i] * ((double)right[i] / INT16_MAX / blockSize); //Real
+			fftIn[i][1] = 0.; //Imaginary
+		}
 	}
 
 	//Do FFT on right samples

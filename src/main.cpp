@@ -26,6 +26,7 @@ void slotNodeDiscover(std::shared_ptr<LightNode>);
 
 void slotNodeStateChange(LightNode*, LightNode::State, LightNode::State);
 
+std::shared_ptr<LightEffect> fadeEffect;
 std::shared_ptr<LightEffect> leftEffect, centerEffect, rightEffect, bassEffect;
 std::shared_ptr<LightEffect> digitalEffect;
 std::shared_ptr<LightEffect> matrixEffect, visualizerEffect;
@@ -41,6 +42,9 @@ int main() {
 	//Create a spectrum analyzer
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer =
 		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 4096);
+	
+	fadeEffect = std::make_shared<LightEffectFade>();
+	fadeEffect->setParameter("brightness", 0.25);
 
 	//Left/Right full range sound effects
 	leftEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer,
@@ -90,7 +94,8 @@ int main() {
 	Rhopalia controller;
 
 	controller.addListener(LightHub::NODE_DISCOVER, &slotNodeDiscover);
-
+	
+	controller.addEffect(fadeEffect);
 	controller.addEffect(leftEffect);
 	controller.addEffect(centerEffect);
 	controller.addEffect(rightEffect);
@@ -103,18 +108,7 @@ int main() {
 	//Start the audio device
 	audioDevice->startStream();
 	
-	//Everything is handled by other threads now
-	for(;;) {
-		std::this_thread::sleep_for(std::chrono::seconds(10));
-/*
-		char msg[1024];
-
-		std::cout << ">";
-		std::cin.getline(msg, sizeof(msg));
-
-		matrixEffect->setParameter("text", std::string(msg));
-*/
-	}
+	controller.run();
 
 	return 0;
 }
@@ -144,7 +138,8 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 				break;
 
 				case LightStrip::Type::Digital:
-					digitalEffect->addStrip(strip);
+					fadeEffect->addStrip(strip);
+					//digitalEffect->addStrip(strip);
 					//tvEffect->addStrip(strip);
 
 					std::cout << "\tDigital strip (" << strip->getSize() << ")"  << std::endl;

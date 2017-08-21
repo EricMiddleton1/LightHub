@@ -10,6 +10,7 @@
 #include <boost/signals2.hpp>
 
 #include "LightNode.hpp"
+#include "PeriodicTimer.hpp"
 
 
 //Forward declaration of friend class
@@ -18,11 +19,6 @@ class Rhopalia;
 class LightHub
 {
 public:
-	enum DiscoveryMethod_e {
-		SWEEP,
-		BROADCAST
-	};
-
 	enum ListenerType_e {
 		NODE_DISCOVER
 	};
@@ -31,8 +27,7 @@ public:
 	static const uint16_t LIGHT_HUB_NODE_NOT_FOUND = 1;
 	static const uint16_t LIGHT_HUB_INVALID_PAYLOAD = 2;
 
-	LightHub(uint16_t sendPort, uint16_t recvPort, DiscoveryMethod_e,
-		uint32_t discoverPeriod = 1000);
+	LightHub(uint16_t sendPort, uint16_t recvPort, uint32_t discoverPeriod = 1000);
 	~LightHub();
 
 	template<class T>
@@ -41,13 +36,10 @@ public:
 			sigNodeDiscover.connect(slot);
 		}
 		else {
-			//This shouldn't happen
 			std::cout << "[Error] LightNode::addListener: Invalid listener type"
 				<< std::endl;
 		}
 	}
-
-	void discover(DiscoveryMethod_e);
 
 	std::shared_ptr<LightNode> getNodeByName(const std::string&);
 
@@ -71,6 +63,8 @@ private:
 
 	//Starts an async read on the UDP socket
 	void startListening();
+
+	void discover();
 
 	//Callbacks for network operations
 	void handleSendBroadcast(const boost::system::error_code&,
@@ -101,9 +95,5 @@ private:
 	std::array<uint8_t, 512> readBuffer;
 
 	//Autodiscovery stuff
-	boost::asio::deadline_timer discoveryTimer;
-	DiscoveryMethod_e discoveryMethod;
-	uint32_t discoveryPeriod;
-
-
+	PeriodicTimer discoveryTimer;
 };

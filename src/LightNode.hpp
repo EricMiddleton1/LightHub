@@ -14,6 +14,8 @@
 
 #include "LightStrip.hpp"
 #include "Packet.hpp"
+#include "PeriodicTimer.hpp"
+#include "WatchdogTimer.hpp"
 
 
 //Forward declaration of friend class
@@ -32,11 +34,10 @@ public:
 		STATE_CHANGE
 	};
 
-	LightNode(const std::string& name, const std::vector<std::shared_ptr<LightStrip>>&,
+	LightNode(boost::asio::io_service& ioService, const std::string& name,
+		const std::vector<std::shared_ptr<LightStrip>>&,
 		const boost::asio::ip::address& addr, uint16_t sendPort);
 	
-	~LightNode();
-
 	void addListener(ListenerType,
 		std::function<void(LightNode*, State, State)>);
 
@@ -58,10 +59,10 @@ public:
 	static std::string stateToString(State state);
 
 private:
-	static const int CONNECT_TIMEOUT = 1000;
-	static const int SEND_TIMEOUT = 1000;
-	static const int WATCHDOG_TIMEOUT = 3000;
-	static const int PACKET_RETRY_COUNT = 3;
+	const int CONNECT_TIMEOUT = 1000;
+	const int SEND_TIMEOUT = 1000;
+	const int RECV_TIMEOUT = 3000;
+	const int PACKET_RETRY_COUNT = 3;
 
 	friend class LightHub;
 
@@ -73,18 +74,14 @@ private:
 
 	void sendPacket(const Packet& p);
 
-	void cbConnectTimer(const boost::system::error_code& error);
-	void cbSendTimer(const boost::system::error_code& error);
-	void cbWatchdogTimer(const boost::system::error_code& error);
+	void connectTimerHandler();
+	void sendTimerHandler();
+	void recvTimerHandler();
 
 	void cbSendPacket(uint8_t *buffer, const boost::system::error_code& error,
 		size_t bytesTransferred);
 
 	void changeState(State newState);
-
-	void resetSendTimer();
-	void feedWatchdog();
-	void setConnectTimer();
 
 	//Remote node information
 	std::string name;
@@ -94,20 +91,16 @@ private:
 	boost::signals2::signal<void(LightNode*, State, State)> sigStateChange;
 
 	//Network stuff
-	boost::asio::io_service ioService;
+	boost::asio::io_service& ioService;
 	boost::asio::ip::udp::endpoint udpEndpoint;
 	boost::asio::ip::udp::socket udpSocket;
 
 	//Timer stuff
-	boost::asio::deadline_timer connectTimer;
-	boost::asio::deadline_timer watchdogTimer;
-	boost::asio::deadline_timer sendTimer;
+	std::unique_ptr<PeriodicTimer> connectTimer;
+	WatchdogTimer recvTimer;
+	WatchdogTimer sendTimer;
 
 	int connectRetryCount;
-
-	//Thread stuff
-	std::unique_ptr<boost::asio::io_service::work> workPtr;
-	std::thread asyncThread;
 
 	State state;
 };

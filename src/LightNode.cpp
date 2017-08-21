@@ -1,39 +1,27 @@
 #include "LightNode.hpp"
 
+#include <chrono>
+
 using namespace std;
 
-LightNode::LightNode(const string& _name,
+LightNode::LightNode(boost::asio::io_service& _ioService, const string& _name,
 	const std::vector<std::shared_ptr<LightStrip>>& _strips,
 	const boost::asio::ip::address& addr, uint16_t sendPort)
 		:	name(_name)
 		,	strips{_strips}
+		, ioService{_ioService}
 		,	udpEndpoint(addr, sendPort)
 		,	udpSocket(ioService)
-		,	connectTimer(ioService)
-		,	watchdogTimer(ioService)
-		,	sendTimer(ioService)
+		,	recvTimer(ioService, std::chrono::milliseconds(RECV_TIMEOUT),
+			[this] () { recvTimerHandler(); })
+		,	sendTimer(ioService, std::chrono::milliseconds(SEND_TIMEOUT),
+			[this] () { sendTimerHandler(); })
 		,	connectRetryCount{0}
 		,	state{State::CONNECTING} {
 
-	ioService.reset();
-
-	//Create work unit so ioService doesn't return until deconstructor
-	workPtr.reset(new boost::asio::io_service::work(ioService));
-
 	udpSocket.open(boost::asio::ip::udp::v4());
 	
-	asyncThread = thread(std::bind(&LightNode::threadRoutine, this));
-
-	sendPacket(Packet::Init());
-	setConnectTimer();
-}
-
-LightNode::~LightNode() {
-	//Clear the io_service work unit
-	workPtr.reset();
-	ioService.stop();
-
-	asyncThread.join();
+	connect();
 }
 
 void LightNode::addListener(ListenerType listenType,
@@ -49,43 +37,26 @@ void LightNode::addListener(ListenerType listenType,
 	}
 }
 
-void LightNode::threadRoutine() {
-	ioService.run();
-
-	cout << "[Info] threadRoutine finished." << endl;
-}
-
-void LightNode::cbConnectTimer(const boost::system::error_code& error) {
-	if(error.value() == boost::system::errc::operation_canceled) {
-		return;
-	}
-
+void LightNode::connectTimerHandler() {
 	connectRetryCount++;
+
 	if(connectRetryCount > PACKET_RETRY_COUNT) {
 		changeState(State::DISCONNECTED);
+		connectTimer.reset();
 	}
 	else {
 		sendPacket(Packet::Init());
-		setConnectTimer();
 	}
 }
 
-void LightNode::cbSendTimer(const boost::system::error_code& error) {
-	if(error.value() == boost::system::errc::operation_canceled) {
-		return;
-	}
-	
+void LightNode::sendTimerHandler() {
 	if(state == State::CONNECTED) {
 		//Send an alive packet so node doesn't disconnect
 		sendPacket(Packet::Alive());
 	}
 }
 
-void LightNode::cbWatchdogTimer(const boost::system::error_code& error) {
-	if(error.value() == boost::system::errc::operation_canceled) {
-		return;
-	}
-
+void LightNode::recvTimerHandler() {
 	//The watchdog timer expired, state is now DISCONNECTED
 	changeState(State::DISCONNECTED);
 }
@@ -112,40 +83,20 @@ void LightNode::changeState(State newState) {
 
 	//If now CONNECTED, start watchdog and send timers
 	if(newState == State::CONNECTED) {
-		feedWatchdog();
-		resetSendTimer();
+		recvTimer.start();
+		sendTimer.start();
 	}
 	else if(newState == State::CONNECTING) {
 		connect();
 	}
+	else {
+		//Stop the watchdog timers
+		recvTimer.stop();
+		sendTimer.stop();
+	}
 
 	//notify the callback
 	sigStateChange(this, oldState, newState);
-}
-
-void LightNode::resetSendTimer() {
-	sendTimer.cancel();
-
-	sendTimer.expires_from_now(
-		boost::posix_time::milliseconds(SEND_TIMEOUT));
-	sendTimer.async_wait(std::bind(&LightNode::cbSendTimer, this, std::placeholders::_1));
-}
-
-void LightNode::feedWatchdog() {
-	watchdogTimer.cancel();
-
-	//Set watchdog timer
-	watchdogTimer.expires_from_now(
-		boost::posix_time::milliseconds(WATCHDOG_TIMEOUT));
-
-	//Start watchdog timer
-	watchdogTimer.async_wait(std::bind(&LightNode::cbWatchdogTimer, this, std::placeholders::_1));
-}
-
-void LightNode::setConnectTimer() {
-	connectTimer.cancel();
-	connectTimer.expires_from_now(boost::posix_time::milliseconds(CONNECT_TIMEOUT));
-	connectTimer.async_wait(std::bind(&LightNode::cbConnectTimer, this, std::placeholders::_1));
 }
 
 void LightNode::connect() {
@@ -157,7 +108,9 @@ void LightNode::connect() {
 	sendPacket(Packet::Init());
 
 	changeState(State::CONNECTING);
-	setConnectTimer();
+
+	connectTimer = std::make_unique<PeriodicTimer>(ioService,
+		std::chrono::milliseconds(CONNECT_TIMEOUT), [this]() { connectTimerHandler(); });
 }
 
 void LightNode::sendPacket(const Packet& p) {
@@ -175,7 +128,7 @@ void LightNode::sendPacket(const Packet& p) {
 		std::placeholders::_2));
 
 	if(state == State::CONNECTED) {
-		resetSendTimer();
+		sendTimer.feed();
 	}
 }
 
@@ -223,7 +176,7 @@ void LightNode::receivePacket(const Packet& p) {
 		case Packet::ALIVE:
 		case Packet::ACK:
 			if(state == State::CONNECTING) {
-				connectTimer.cancel();
+				connectTimer.reset();
 			}
 
 			if(state != State::CONNECTED) {
@@ -231,7 +184,7 @@ void LightNode::receivePacket(const Packet& p) {
 
 			}
 			else {
-				feedWatchdog();
+				recvTimer.feed();
 			}
 		break;
 
