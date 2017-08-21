@@ -9,7 +9,7 @@
 LightEffectMatrixEQ::LightEffectMatrixEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
 	:	LightEffect({LightStrip::Type::Matrix},
-		{{"invert", false}, {"multiplier", 1.2}, {"band count",
+		{{"invert", false}, {"multiplier", 1.1}, {"band count",
 			(double)_spectrumAnalyzer->getLeftSpectrum().getBinCount(),
 			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
