@@ -31,15 +31,15 @@ public:
 		const int16_t*)> cb);
 	void removeCallback(unsigned int id);
 
-	int startStream();
-	int stopStream();
-
 	unsigned int getSampleRate();
 	unsigned int getBlockSize();
 
 	bool isRunning();
 
 private:
+	int startStream();
+	int stopStream();
+
 	//PortAudio callback
 	static int paCallback(const void* input, void* output,
 		unsigned long frameCount, const PaStreamCallbackTimeInfo* timeInfo,

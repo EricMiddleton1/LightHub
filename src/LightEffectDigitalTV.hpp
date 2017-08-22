@@ -17,7 +17,7 @@ private:
 	void updateStrip(std::shared_ptr<LightStrip> strip) override;
 
 	std::shared_ptr<Display> display;
+	std::unique_ptr<DisplayBuffer> displayBuffer;
 	
-	Display::Coordinate width, height;
 	std::vector<Color> edge;
 };

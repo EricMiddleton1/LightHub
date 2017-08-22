@@ -34,6 +34,8 @@ protected:
 
 	std::function<void(std::pair<size_t, std::weak_ptr<LightStrip>>&)> onAdd, onRemove;
 
+	std::function<void(void)> onStart, onStop;
+
 private:
 	friend class Rhopalia;
 

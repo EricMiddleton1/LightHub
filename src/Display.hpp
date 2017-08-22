@@ -1,7 +1,9 @@
 #pragma once
 
 #include <mutex>
+#include <memory>
 
+#include "DisplayBuffer.hpp"
 #include "ScreenCapture.h"
 #include "ConfigurableObject.hpp"
 #include "Color.hpp"
@@ -13,6 +15,13 @@ public:
 
 	Display();
 	
+	std::unique_ptr<DisplayBuffer> getBuffer();
+	
+private:
+	friend class DisplayBuffer;
+
+	void releaseBuffer(const DisplayBuffer*);
+
 	Coordinate getWidth() const;
 	Coordinate getHeight() const;
 
@@ -22,9 +31,6 @@ public:
 	Color get(Coordinate x, Coordinate y) const;
 	Color getAverageColor(Coordinate x1, Coordinate y1,
 		Coordinate x2, Coordinate y2) const;
-
-private:
-
 
 	SL::Screen_Capture::ScreenCaptureManager capture;
 	
@@ -54,4 +60,7 @@ private:
 	} rawImage;
 
 	mutable std::mutex mutex;
+
+	std::vector<DisplayBuffer*> buffers;
+	std::mutex bufferMutex;
 };

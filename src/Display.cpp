@@ -39,6 +39,43 @@ Display::Display()
 	capture.setFrameChangeInterval(1s /
 		(double)getParameter("frame rate").getValue().getInt());
 
+	capture.pause();
+}
+
+std::unique_ptr<DisplayBuffer> Display::getBuffer() {
+	auto buffer = std::make_unique<DisplayBuffer>(*this);
+
+	{
+		std::unique_lock<std::mutex> bufferLock(bufferMutex);
+
+		buffers.push_back(buffer.get());
+
+		if(buffers.size() == 1) {
+			std::cout << "[Info] Display: Starting capture" << std::endl;
+
+			capture.resume();
+		}
+	}
+
+	return buffer;
+}
+
+void Display::releaseBuffer(const DisplayBuffer* buffer) {
+	std::unique_lock<std::mutex> bufferLock(bufferMutex);
+
+	auto found = std::find(buffers.begin(), buffers.end(), buffer);
+
+	if(found == buffers.end()) {
+		throw std::runtime_error("Display::releaseBuffer: buffer not found in vector");
+	}
+
+	buffers.erase(found);
+
+	if(buffers.empty()) {
+		std::cout << "[Info] Display: Stopping capture" << std::endl;
+
+		capture.pause();
+	}
 }
 
 Display::RawImage::RawImage()

@@ -80,6 +80,10 @@ unsigned int AudioDevice::addCallback(std::function<void(const int16_t*,
 	auto cbPair = std::pair<unsigned int,
 		std::function<void(const int16_t*, const int16_t*)>>(id, cb);
 	callbacks.insert(cbPair);
+	
+	if(callbacks.size() == 1) {
+		startStream();
+	}
 
 	return id++;
 }
@@ -99,6 +103,10 @@ void AudioDevice::removeCallback(unsigned int id) {
 
 	//Remove callback
 	callbacks.erase(cbItr);
+
+	if(callbacks.empty()) {
+		stopStream();
+	}
 
 //mutex is released here
 }

@@ -6,9 +6,10 @@ LightEffectDigitalTV::LightEffectDigitalTV(const std::shared_ptr<Display>& _disp
 	:	LightEffect{ {LightStrip::Type::Digital},
 		{{"width", 68}, {"height", 36}, {"depth", 64}, {"filter", 0.3}} }
 	,	display{_display} 
-	,	width{display->getWidth()}
-	,	height{display->getHeight()}
 	,	edge{2*68 + 2*36} {
+	
+	onStart = [this]() { displayBuffer = display->getBuffer(); };
+	onStop = [this]() { displayBuffer.reset(); };
 }
 
 void LightEffectDigitalTV::tick() {
@@ -17,23 +18,24 @@ void LightEffectDigitalTV::tick() {
 	int depth = getParameter("depth").getValue().getInt();
 	auto filter = getParameter("filter").getValue().getDouble();
 
-	auto y0 = display->getTopOffset();
-	auto height = display->getHeight() - display->getBottomOffset();
+	auto y0 = displayBuffer->getTopOffset();
+	auto width = displayBuffer->getWidth();
+	auto height = displayBuffer->getHeight() - displayBuffer->getBottomOffset();
 	auto adjHeight = height - y0;
 
 	for(int x = 0; x < stripWidth; ++x) {
-		edge[x].filter(display->getAverageColor(x*width/stripWidth, y0,
+		edge[x].filter(displayBuffer->getAverageColor(x*width/stripWidth, y0,
 			(x+1)*width/stripWidth, y0 + depth), filter);
 		edge[2*stripWidth+stripHeight-x-1].filter(
-			display->getAverageColor(x*width/stripWidth, height-depth,
+			displayBuffer->getAverageColor(x*width/stripWidth, height-depth,
 			(x+1)*width/stripWidth, height), filter);
 	}
 	for(int y = 0; y < stripHeight; ++y) {
-		edge[stripWidth+y].filter(display->getAverageColor(
+		edge[stripWidth+y].filter(displayBuffer->getAverageColor(
 			width-depth, y0 + y*adjHeight/stripHeight, width,
 			y0 + (y+1)*adjHeight/stripHeight), filter);
 		edge[2*stripWidth+2*stripHeight-y-1].filter(
-			display->getAverageColor(0, y0 + y*adjHeight/stripHeight, depth,
+			displayBuffer->getAverageColor(0, y0 + y*adjHeight/stripHeight, depth,
 				y0 + (y+1)*adjHeight/stripHeight),
 			filter);
 	}

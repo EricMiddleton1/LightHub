@@ -38,6 +38,10 @@ void LightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
 	if(onAdd) {
 		onAdd(pair);
 	}
+
+	if( (strips.size() == 1) && onStart ) {
+		onStart();
+	}
 }
 
 void LightEffect::removeStrip(size_t id) {
@@ -61,25 +65,30 @@ void LightEffect::removeStrip(size_t id) {
 
 	//Remove the node
 	strips.erase(found);
+
+	if( strips.empty() && onStop ) {
+		onStop();
+	}
 }
 
 void LightEffect::update() {
 	std::vector<size_t> deadStrips;
 
-	//Call 'tick' (to allow effect to perform updates)
-	tick();
-
 	{
 		std::unique_lock<std::mutex> stripsLock(stripsMutex);
+		
+		if(!strips.empty()) {
+			tick();
 
-		for(auto& pair : strips) {
-			auto sharedStrip = pair.second.lock();
+			for(auto& pair : strips) {
+				auto sharedStrip = pair.second.lock();
 
-			if(sharedStrip) {
-				updateStrip(sharedStrip);
-			}
-			else {
-				deadStrips.push_back(pair.first);
+				if(sharedStrip) {
+					updateStrip(sharedStrip);
+				}
+				else {
+					deadStrips.push_back(pair.first);
+				}
 			}
 		}
 	}
