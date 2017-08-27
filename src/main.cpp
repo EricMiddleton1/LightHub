@@ -44,7 +44,7 @@ int main() {
 		std::make_shared<SpectrumAnalyzer>(audioDevice,32.7032,16744.0384,3, 4096);
 	
 	fadeEffect = std::make_shared<LightEffectFade>();
-	fadeEffect->setParameter("brightness", 0.25);
+	//fadeEffect->setParameter("brightness", 0.25);
 
 	//Left/Right full range sound effects
 	leftEffect = std::make_shared<LightEffectSoundSolid>(spectrumAnalyzer,
@@ -136,8 +136,8 @@ void slotNodeDiscover(std::shared_ptr<LightNode> node) {
 				break;
 
 				case LightStrip::Type::Digital:
-					fadeEffect->addStrip(strip);
-					//digitalEffect->addStrip(strip);
+					//fadeEffect->addStrip(strip);
+					digitalEffect->addStrip(strip);
 					//tvEffect->addStrip(strip);
 
 					std::cout << "\tDigital strip (" << strip->getSize() << ")"  << std::endl;
