@@ -192,7 +192,6 @@ void LightNode::receivePacket(const Packet& p) {
 	switch(p.getID()) {
 		case Packet::INFO:
 			if(state == State::DISCONNECTED) {
-
 				changeState(State::CONNECTING);
 			}
 		break;

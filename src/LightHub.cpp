@@ -168,7 +168,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 			sendNode = getNodeByAddress(receiveEndpoint.address());
 
 			//Let the node handle the packet
-			//sendNode->receivePacket(p);
+			sendNode->receivePacket(p);
 		}
 		catch(const Exception& e) {
 			if(e.getErrorCode() == LIGHT_HUB_NODE_NOT_FOUND) {
