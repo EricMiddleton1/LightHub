@@ -8,30 +8,21 @@
 
 using namespace std;
 
-LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort,
-	uint32_t _discoveryPeriod)
-	:	sendSocket(ioService, boost::asio::ip::udp::v4())
-	,	recvSocket(ioService, boost::asio::ip::udp::endpoint(
-			boost::asio::ip::udp::v4(), _recvPort))
-	,	sendPort{_sendPort}
-	,	recvPort{_recvPort}
+LightHub::LightHub(uint16_t _port, uint32_t _discoveryPeriod)
+	:	socket(ioService, boost::asio::ip::udp::v4())
+	,	port{_port}
 	,	discoveryTimer(ioService, std::chrono::milliseconds(_discoveryPeriod),
 		[this](){ discover(); })	{
 
 	//Allow the socket to send broadcast packets
-	sendSocket.set_option(boost::asio::socket_base::broadcast(true));
-	sendSocket.set_option(boost::asio::socket_base::reuse_address(true));
+	socket.set_option(boost::asio::socket_base::broadcast(true));
+	socket.set_option(boost::asio::socket_base::reuse_address(true));
 
-	recvSocket.set_option(boost::asio::socket_base::reuse_address(true));
-	
 	//Construct the work unit for the io_service
 	ioWork.reset(new boost::asio::io_service::work(ioService));
 
 	//Start the async thread
 	asyncThread = std::thread(std::bind(&LightHub::threadRoutine, this));
-
-	//Start listening for packets
-	startListening();
 
 	std::cout << "[Info] LightHub::LightHub: Now listening for packets"
 		<< std::endl;
@@ -39,32 +30,30 @@ LightHub::LightHub(uint16_t _sendPort, uint16_t _recvPort,
 	std::cout << "[Info] LightHub::LightHub: Performing initial network "
 		"discovery" << std::endl;
 
-	//Do an initial node discovery
-	ioService.post([this]() { discover(); });
+	//Post constructor setup (on local thread)
+	ioService.post([this]() {
+		discover();
+
+		startListening();
+	});
 }
 
 LightHub::~LightHub() {
 	//Delete the work unit, allow io_service.run() to return
 	ioWork.reset();
 
-	//Wait for the async thread to complete
 	asyncThread.join();
 }
 
 void LightHub::threadRoutine() {
-	//Run all async tasks
 	ioService.run();
 }
 
 
 void LightHub::discover() {
-	boost::asio::ip::udp::endpoint endpoint(
-		boost::asio::ip::address_v4::broadcast(), sendPort);
-
-	//Send ping broadcast packet
-	sendSocket.async_send_to(boost::asio::buffer(
-		Packet::Ping().asDatagram()),	//Construct ping packet
-		endpoint,	//Broadcast endpoint
+	socket.async_send_to(boost::asio::buffer(
+		Packet::Ping().asDatagram()),
+		boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::broadcast(), port),
 		boost::bind(&LightHub::handleSendBroadcast, this,
 			boost::asio::placeholders::error,
 			boost::asio::placeholders::bytes_transferred));
@@ -137,7 +126,7 @@ void LightHub::handleSendBroadcast(const boost::system::error_code& ec,
 
 void LightHub::startListening() {
 	//Start the async receive
-	recvSocket.async_receive_from(boost::asio::buffer(readBuffer),
+	socket.async_receive_from(boost::asio::buffer(readBuffer),
 		receiveEndpoint,
 		boost::bind(&LightHub::handleReceive, this,
 			boost::asio::placeholders::error,
@@ -171,7 +160,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 					<< e.what() << std::endl;
 			}
 		}
-
+		
 		std::shared_ptr<LightNode> sendNode;
 
 		//try to find the node associated with this packet
@@ -179,7 +168,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 			sendNode = getNodeByAddress(receiveEndpoint.address());
 
 			//Let the node handle the packet
-			sendNode->receivePacket(p);
+			//sendNode->receivePacket(p);
 		}
 		catch(const Exception& e) {
 			if(e.getErrorCode() == LIGHT_HUB_NODE_NOT_FOUND) {
@@ -228,7 +217,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 							payload.end());
 						
 						auto newNode = std::make_shared<LightNode>(ioService, name, strips,
-							receiveEndpoint.address(), sendPort);
+							receiveEndpoint);
 
 						//Store the new node
 						nodes.push_back(newNode);

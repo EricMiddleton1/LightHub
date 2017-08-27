@@ -80,16 +80,14 @@ int main() {
 	bassEffect->setParameter("threshold", 0.1);
 
 	digitalEffect = std::make_shared<LightEffectStripEQ>(spectrumAnalyzer);
-	//digitalEffect = std::make_shared<LightEffectLinearClock>();
-	//matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 	matrixEffect = std::make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 
-	auto display = std::make_shared<Display>();
-	std::cout << "[Info] Display (" << display->getWidth() << ", " << display->getHeight()
-		<< ")" << std::endl;
+	//auto display = std::make_shared<Display>();
+	//std::cout << "[Info] Display (" << display->getWidth() << ", " << display->getHeight()
+		//<< ")" << std::endl;
 
-	tvEffect = std::make_shared<LightEffectDigitalTV>(display);
-	matrixTVEffect = std::make_shared<LightEffectMatrixTV>(display);
+	//tvEffect = std::make_shared<LightEffectDigitalTV>(display);
+	//matrixTVEffect = std::make_shared<LightEffectMatrixTV>(display);
 
 	Rhopalia controller;
 
@@ -102,9 +100,9 @@ int main() {
 	controller.addEffect(bassEffect);
 	controller.addEffect(digitalEffect);
 	controller.addEffect(matrixEffect);
-	controller.addEffect(tvEffect);
-	controller.addEffect(matrixTVEffect);
-	
+	//controller.addEffect(tvEffect);
+	//controller.addEffect(matrixTVEffect);
+
 	//Start the audio device
 	audioDevice->startStream();
 	

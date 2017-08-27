@@ -33,8 +33,7 @@ public:
 
 private:
 	//TODO: Read these values from a config file
-	uint16_t SEND_PORT = 54923;
-	const uint16_t RECV_PORT = 54924;
+	uint16_t PORT = 54923;
 	const uint32_t UPDATE_PERIOD = 20;
 
 	void update();

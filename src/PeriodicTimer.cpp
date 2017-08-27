@@ -5,7 +5,8 @@
 
 PeriodicTimer::PeriodicTimer(boost::asio::io_service& _ioService,
 	const std::chrono::microseconds& _period, const TimerHandler& _handler)
-	:	ioService{_ioService}
+	:	running{true}
+	,	ioService{_ioService}
 	,	period{_period}
 	,	handler{_handler}
 	,	timer{ioService} {
@@ -18,6 +19,11 @@ PeriodicTimer::PeriodicTimer(boost::asio::io_service& _ioService,
 	timer.async_wait([this](const boost::system::error_code& error) {
 		cbTimer(error);
 	});
+}
+
+PeriodicTimer::~PeriodicTimer() {
+	running = false;
+	timer.cancel();
 }
 
 void PeriodicTimer::cbTimer(const boost::system::error_code& error) {
@@ -35,8 +41,10 @@ void PeriodicTimer::cbTimer(const boost::system::error_code& error) {
 }
 
 void PeriodicTimer::resetTimer() {
-	timer.expires_from_now(timer.expires_from_now() + period);
-	timer.async_wait([this](const boost::system::error_code& error) {
-		cbTimer(error);
-	});
+	if(running) {
+		timer.expires_from_now(timer.expires_from_now() + period);
+		timer.async_wait([this](const boost::system::error_code& error) {
+			cbTimer(error);
+		});
+	}
 }

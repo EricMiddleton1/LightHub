@@ -3,7 +3,7 @@
 #include <chrono>
 
 Rhopalia::Rhopalia()
-	:	hub(SEND_PORT, RECV_PORT)
+	:	hub(PORT)
 	,	workUnit(std::make_unique<boost::asio::io_service::work>(ioService))
 	,	updateTimer(ioService, std::chrono::milliseconds(UPDATE_PERIOD),
 			[this]() { update(); }) {

@@ -1,27 +1,27 @@
 #include "LightNode.hpp"
 
+#include <iostream>
 #include <chrono>
 
 using namespace std;
 
 LightNode::LightNode(boost::asio::io_service& _ioService, const string& _name,
 	const std::vector<std::shared_ptr<LightStrip>>& _strips,
-	const boost::asio::ip::address& addr, uint16_t sendPort)
+	const boost::asio::ip::udp::endpoint& _endpoint)
 		:	name(_name)
 		,	strips{_strips}
 		, ioService{_ioService}
-		,	udpEndpoint(addr, sendPort)
-		,	udpSocket(ioService)
+		,	udpEndpoint(_endpoint)
+		,	udpSocket(ioService, boost::asio::ip::udp::v4())
 		,	recvTimer(ioService, std::chrono::milliseconds(RECV_TIMEOUT),
 			[this] () { recvTimerHandler(); })
 		,	sendTimer(ioService, std::chrono::milliseconds(SEND_TIMEOUT),
 			[this] () { sendTimerHandler(); })
 		,	connectRetryCount{0}
 		,	state{State::CONNECTING} {
-
-	udpSocket.open(boost::asio::ip::udp::v4());
 	
 	connect();
+	startListening();
 }
 
 void LightNode::addListener(ListenerType listenType,
@@ -35,6 +35,31 @@ void LightNode::addListener(ListenerType listenType,
 		cout << "[Error] LightNode::addListener: Invalid listener type"
 			<< endl;
 	}
+}
+
+void LightNode::startListening() {
+	udpSocket.async_receive_from(boost::asio::buffer(readBuffer),
+		recvEndpoint, [this](const boost::system::error_code& ec, size_t bytesTransferred) {
+			if(!ec && (recvEndpoint.address() == udpEndpoint.address())) {
+				Packet p;
+
+				try {
+					p = Packet(std::vector<uint8_t>(std::begin(readBuffer),
+						std::begin(readBuffer) + bytesTransferred));
+				}
+				catch(const Exception& e) {
+					std::cout << "[Error] LightHub::handleReceive: Invalid datagram: " << e.what()
+						<< std::endl;
+
+					startListening();
+					return;
+				}
+
+				receivePacket(p);
+			}
+
+			startListening();
+		});
 }
 
 void LightNode::connectTimerHandler() {
@@ -62,7 +87,6 @@ void LightNode::recvTimerHandler() {
 }
 
 void LightNode::cbSendPacket(uint8_t *buffer, const boost::system::error_code& error, size_t) {
-
 	//TODO: deal with errors
 
 	if(error) {
@@ -110,7 +134,7 @@ void LightNode::connect() {
 	changeState(State::CONNECTING);
 
 	connectTimer = std::make_unique<PeriodicTimer>(ioService,
-		std::chrono::milliseconds(CONNECT_TIMEOUT), [this]() { connectTimerHandler(); });
+		std::chrono::milliseconds(CONNECT_TIMEOUT), [this]() { std::cout << "[Info] ConnectTimer" << std::endl; connectTimerHandler(); });
 }
 
 void LightNode::sendPacket(const Packet& p) {

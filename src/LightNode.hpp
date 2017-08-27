@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string> //std::string
 #include <thread> //std::thread
 #include <functional> //std::bind, std::function
@@ -36,8 +37,8 @@ public:
 
 	LightNode(boost::asio::io_service& ioService, const std::string& name,
 		const std::vector<std::shared_ptr<LightStrip>>&,
-		const boost::asio::ip::address& addr, uint16_t sendPort);
-	
+		const boost::asio::ip::udp::endpoint& endpoint);
+
 	void addListener(ListenerType,
 		std::function<void(LightNode*, State, State)>);
 
@@ -67,7 +68,8 @@ private:
 	friend class LightHub;
 
 	bool update();
-
+	
+	void startListening();
 	void receivePacket(const Packet& p);
 
 	void threadRoutine();
@@ -92,8 +94,9 @@ private:
 
 	//Network stuff
 	boost::asio::io_service& ioService;
-	boost::asio::ip::udp::endpoint udpEndpoint;
+	boost::asio::ip::udp::endpoint udpEndpoint, recvEndpoint;
 	boost::asio::ip::udp::socket udpSocket;
+	std::array<uint8_t, 512> readBuffer;
 
 	//Timer stuff
 	std::unique_ptr<PeriodicTimer> connectTimer;

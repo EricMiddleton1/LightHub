@@ -27,7 +27,7 @@ public:
 	static const uint16_t LIGHT_HUB_NODE_NOT_FOUND = 1;
 	static const uint16_t LIGHT_HUB_INVALID_PAYLOAD = 2;
 
-	LightHub(uint16_t sendPort, uint16_t recvPort, uint32_t discoverPeriod = 1000);
+	LightHub(uint16_t port, uint32_t discoverPeriod = 1000);
 	~LightHub();
 
 	template<class T>
@@ -89,9 +89,9 @@ private:
 	std::thread asyncThread;
 
 	//Network stuff
-	boost::asio::ip::udp::socket sendSocket, recvSocket;
+	boost::asio::ip::udp::socket socket;
 	boost::asio::ip::udp::endpoint receiveEndpoint;
-	uint16_t sendPort, recvPort;
+	uint16_t port;
 	std::array<uint8_t, 512> readBuffer;
 
 	//Autodiscovery stuff
