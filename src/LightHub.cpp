@@ -7,28 +7,23 @@
 #include <chrono>
 
 using namespace std;
+using namespace boost::asio;
 
 LightHub::LightHub(uint16_t _port, uint32_t _discoveryPeriod)
-	:	socket(ioService, boost::asio::ip::udp::v4())
+	:	socket(ioService, ip::udp::v4())
 	,	port{_port}
 	,	discoveryTimer(ioService, std::chrono::milliseconds(_discoveryPeriod),
 		[this](){ discover(); })	{
 
-	//Allow the socket to send broadcast packets
-	socket.set_option(boost::asio::socket_base::broadcast(true));
-	socket.set_option(boost::asio::socket_base::reuse_address(true));
+	socket.set_option(socket_base::broadcast(true));
+	socket.set_option(socket_base::reuse_address(true));
 
-	//Construct the work unit for the io_service
-	ioWork.reset(new boost::asio::io_service::work(ioService));
+	ioWork.reset(make_unique<io_service::work>(ioService));
 
-	//Start the async thread
-	asyncThread = std::thread(std::bind(&LightHub::threadRoutine, this));
+	asyncThread = std::thread(LightHub::threadRoutine, this);
 
 	std::cout << "[Info] LightHub::LightHub: Now listening for packets"
 		<< std::endl;
-
-	std::cout << "[Info] LightHub::LightHub: Performing initial network "
-		"discovery" << std::endl;
 
 	//Post constructor setup (on local thread)
 	ioService.post([this]() {
@@ -51,47 +46,24 @@ void LightHub::threadRoutine() {
 
 
 void LightHub::discover() {
-	socket.async_send_to(boost::asio::buffer(
-		Packet::Ping().asDatagram()),
-		boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::broadcast(), port),
-		boost::bind(&LightHub::handleSendBroadcast, this,
-			boost::asio::placeholders::error,
-			boost::asio::placeholders::bytes_transferred));
+	sendDatagram(ip::address_v4::broadcast(),
+		Packet::NodeInfo().asDatagram());
 }
 
-std::shared_ptr<LightNode> LightHub::getNodeByName(const std::string& name) {
-	
-	auto found = std::find_if(std::begin(nodes), std::end(nodes),
-		[&name](const std::shared_ptr<LightNode>& node) {
-			return node->getName() == name;
+void LightHub::sendDatagram(const ip::address& addr, const vector<uint8_t>& data) {
+	lock_guard<mutex> sendLock(sendMutex);
+
+	sendQueue.push_back(data);
+
+	socket.async_send_to(buffer(sendQueue.back()), ip::udp::endpoint(addr, port),
+		[this](boost::system::error_code& ec, size_t bytesTransferred) {
+			lock_guard<mutex> sendLock(sendMutex);
+			sendQueue.pop_front();
+
+			if(ec) {
+				cerr << "[Error] LightHub::cbSendDatagram: " << ec.message() << endl;
+			}
 		});
-	
-	if(found == std::end(nodes)) {
-		//We didn't find a node
-		throw Exception(LIGHT_HUB_NODE_NOT_FOUND, "LightHub::getNodeByName: "
-			"node not found");
-	}
-	else {
-		return *found;
-	}
-}
-
-std::shared_ptr<LightNode> LightHub::getNodeByAddress(
-	const boost::asio::ip::address& addr) {
-
-	auto found = std::find_if(std::begin(nodes), std::end(nodes),
-		[&addr](const std::shared_ptr<LightNode>& node) {
-			return node->getAddress() == addr;
-		});
-
-	if(found == std::end(nodes)) {
-		//We didn't find a node
-		throw Exception(LIGHT_HUB_NODE_NOT_FOUND, "LightHub::getNodeByAddress: "
-			"node not found");
-	}
-	else {
-		return *found;
-	}
 }
 
 std::vector<std::shared_ptr<LightNode>>::iterator LightHub::begin() {
@@ -106,31 +78,13 @@ size_t LightHub::getNodeCount() const {
 	return nodes.size();
 }
 
-size_t LightHub::getConnectedNodeCount() const {
-	size_t connectedCount = 0;
-
-	for(auto& node : nodes) {
-		connectedCount += node->getState() == LightNode::State::CONNECTED;
-	}
-
-	return connectedCount;
-}
-
-void LightHub::handleSendBroadcast(const boost::system::error_code& ec,
-	size_t) {
-	if(ec) {
-		std::cout << "[Error] Failed to send broadcast ping message: "
-			<< ec.message() << std::endl;
-	}
-}
-
 void LightHub::startListening() {
 	//Start the async receive
-	socket.async_receive_from(boost::asio::buffer(readBuffer),
+	socket.async_receive_from(buffer(readBuffer),
 		receiveEndpoint,
-		boost::bind(&LightHub::handleReceive, this,
-			boost::asio::placeholders::error,
-			boost::asio::placeholders::bytes_transferred));
+		[this](const boost::system::error_code& ec, size_t bytesTransferred) {
+			handleReceive(ec, bytesTransferred);
+		});
 }
 
 void LightHub::handleReceive(const boost::system::error_code& ec,
@@ -140,25 +94,60 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 		std::cout << "[Error] Failed to receive from UDP socket" << std::endl;
 	}
 	else {
-		Packet p;
-
 		try {
-			//Parse the datagram into a packet
-			p = Packet(std::vector<uint8_t>(std::begin(readBuffer),
-				std::begin(readBuffer) + bytesTransferred));
+			Packet p = Packet({readBuffer.begin(), readBuffer.begin() + bytesTransferred));
+
+			switch(p.getID()) {
+				case Packet::ID::NodeInfoResponse: {
+					auto data = p.data();
+
+					if(data.size() < 1) {
+						cerr << "[Error] LightHub::handleReceive: Invalid payload size for NodeInfoResponse: "
+							<< data.size() << endl;
+					}
+					else {
+						string name{data.begin()+1, data.end()};
+
+						for(int i = 0; i < data[0]; ++i) {
+							sendDatagram(receiveEndpoint.address(), Packet::LightInfo(i).asDatagram);
+						}
+
+						if(nodeMap.find(receiveEndpoint.address()) != nodeMap.end()) {
+							nodeMap.insert(receiveEndpoint.address();
+						}
+
+						cout << "[Info] LightHub::handleReceive: Node '" << name << "' discovered" << endl;
+					}
+				}
+				break;
+
+				case Packet::ID::LightInfoResponse: {
+					auto node = nodeMap.find(receiveEndpoint.address());
+					if(node == nodeMap.end()) {
+						cerr << "[Info] LightHub::handleReceive: Received LightInfoResponse from node not "
+							"in map" << endl;
+					}
+					else {
+						if(data.size() < 2) {
+							cerr << "[Error] LightHub::handleReceive: Invalid payload size for "
+								"LightInfoResponse: " << data.size() << endl;
+						}
+						else {
+							auto ledCount = Packet::parse16(data.begin());
+							string name{data.begin()+1, data.end()};
+
+							lights.emplace_back(endpoint.address(), p.getLightID(), name, ledCount);
+
+							cout << "[Info] LightHub::handleReceive: 
+
+					}
+				}
+				break;
+
+			}
 		}
-		catch(const Exception& e) {
-			if(e.getErrorCode() == Packet::PACKET_INVALID_HEADER ||
-					e.getErrorCode() == Packet::PACKET_INVALID_SIZE) {
-				//Might be from some other application, we can ignore
-				std::cout << "[Warning] LightHub::handleReceive: Invalid datagram "
-					"received from " << receiveEndpoint.address() << std::endl;
-			}
-			else {
-				//Weird!
-				std::cout << "[Error] LightHub::handleReceive: Exception caught: "
-					<< e.what() << std::endl;
-			}
+		catch(const exception& e) {
+			std::cout << "[Error] LightHub::handleReceive: " << e.what() << std::endl;
 		}
 		
 		std::shared_ptr<LightNode> sendNode;
