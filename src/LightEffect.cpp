@@ -12,21 +12,28 @@ LightEffect::LightEffect(const std::vector<Parameter>& _parameters)
 LightEffect::~LightEffect() {
 }
 
-void LightEffect::addLight(std::shared_ptr<Light>& light) {
+bool LightEffect::addLight(std::shared_ptr<Light>& light) {
 	std::unique_lock<std::mutex> lightLock(lightMutex);
-	
-	auto fullName = light->getFullName();
 
-	if(lights.find(fullName) != lights.end()) {
-		cerr << "[Error] LightEffect::addLight: Light '" << fullName << "' already added"
-			<< endl;
+	if(validateLight(light)) {
+		auto fullName = light->getFullName();
+
+		if(lights.find(fullName) != lights.end()) {
+			cerr << "[Error] LightEffect::addLight: Light '" << fullName << "' already added"
+				<< endl;
+		}
+		else {
+			lights.emplace(fullName, light);
+		}
+		
+		if(onAdd) {
+			onAdd(light);
+		}
+
+		return true;
 	}
 	else {
-		lights.emplace(fullName, light);
-	}
-	
-	if(onAdd) {
-		onAdd(light);
+		return false;
 	}
 }
 

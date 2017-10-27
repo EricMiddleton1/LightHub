@@ -21,6 +21,7 @@ public:
 
 
 private:
+	virtual bool validateLight(const std::shared_ptr<Light>&);
 	virtual void tick() override;
 	virtual void updateLight(std::shared_ptr<Light>&) override;
 

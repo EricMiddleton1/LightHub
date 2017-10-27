@@ -19,6 +19,10 @@ LightBuffer::~LightBuffer() {
 	light.update();
 }
 
+int LightBuffer::getSize() const {
+	return light.pixelBuffer.size();
+}
+
 Color& LightBuffer::operator[](int index) {
 	if( (index >= light.pixels.size()) || (index < 0) ) {
 		throw runtime_error(string("LightBuffer::operator[]: Invalid index: ")

@@ -55,6 +55,8 @@ class LightBuffer
 public:
 	LightBuffer(Light&);
 	virtual ~LightBuffer();
+
+	int getSize() const;
 	
 	Color& operator[](int index);
 	const Color& operator[](int index) const;

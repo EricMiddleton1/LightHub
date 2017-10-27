@@ -20,10 +20,11 @@ public:
 	LightEffect(const std::vector<Parameter>& parameters);
 	virtual ~LightEffect();
 
-	void addLight(std::shared_ptr<Light>&);
+	bool addLight(std::shared_ptr<Light>&);
 	void removeLight(const std::string& name);
 
 protected:
+	virtual bool validateLight(const std::shared_ptr<Light>&) = 0;
 	virtual void tick() = 0;
 	virtual void updateLight(std::shared_ptr<Light>&) = 0;
 

@@ -18,6 +18,10 @@ LightEffectSoundSolid::LightEffectSoundSolid(
 	,	avg{0.} {
 }
 
+bool LightEffectSoundSolid::validateLight(const std::shared_ptr<Light>& light) {
+	return true;
+}
+
 void LightEffectSoundSolid::tick() {
 
 	switch(channel) {
@@ -78,7 +82,6 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	for(unsigned int i = 0; i < endIndex; ++i) {
 		curAvg += spectrum.getByIndex(i).getEnergy();
 	}
-	std::cout << curAvg << std::endl;
 
 	curAvg = 20.*std::log10(curAvg/endIndex) + noiseFloor;
 
@@ -168,6 +171,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	}
 
 	Color cTmp(r, g, b);
+	
 	uint8_t h = cTmp.getHue(), s = cTmp.getSat(), v = cTmp.getVal();
 
 	if(v < threshold) {

@@ -5,6 +5,10 @@ LightEffectSolid::LightEffectSolid()
 	:	LightEffect({{"color", Color()}}) {
 }
 
+bool LightEffectSolid::validateLight(const std::shared_ptr<Light>& light) {
+	return true;
+}
+
 void LightEffectSolid::tick() {
 }
 

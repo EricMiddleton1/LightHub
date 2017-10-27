@@ -7,6 +7,10 @@ LightEffectFade::LightEffectFade()
 	,	hue{0.}{
 }
 
+bool LightEffectFade::validateLight(const std::shared_ptr<Light>& light) {
+	return true;
+}
+
 void LightEffectFade::tick() {
 	hue = std::fmod(hue + getParameter("speed").getValue().getDouble(), 360.f);
 }
