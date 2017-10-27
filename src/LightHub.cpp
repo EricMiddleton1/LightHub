@@ -106,13 +106,9 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 	size_t bytesTransferred) {
 	
 	if(ec) {
-		std::cout << "[Error] Failed to receive from UDP socket" << std::endl;
+		cerr << "[Error] Failed to receive from UDP socket" << endl;
 	}
 	else {
-/*
-		std::cout << "[Info] Packet received: " << toString({readBuffer.begin(),
-			readBuffer.begin() + bytesTransferred}) << std::endl;
-*/
 		try {
 			Packet p{vector<uint8_t>{readBuffer.begin(), readBuffer.begin() + bytesTransferred}};
 			auto data = p.data();
@@ -132,7 +128,6 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 
 						if(nodes.find(receiveEndpoint.address()) == nodes.end()) {
 							nodes.emplace(receiveEndpoint.address(), name);
-							cout << "[Info] LightHub::handleReceive: Node '" << name << "' discovered" << endl;
 						}
 					}
 				}
@@ -163,9 +158,6 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 									receiveEndpoint.address(), p.getLightID(), name, ledCount));
 
 								sigLightDiscover(node->second.lights.back());
-
-								cout << "[Info] LightHub::handleReceive: Light discovered: " <<
-									node->second.name << "/" << name << " with " << ledCount << " leds" << endl;
 							}
 							else if((*light)->getSize() != ledCount) {
 								node->second.lights.erase(light);
@@ -180,13 +172,13 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 				break;
 
 				default:
-					cout << "[Error] Unexpected message ID received: " << static_cast<int>(p.getID())
+					cerr << "[Error] Unexpected message ID received: " << static_cast<int>(p.getID())
 						<< endl;
 				break;
 			}
 		}
 		catch(const exception& e) {
-			std::cout << "[Error] LightHub::handleReceive: " << e.what() << std::endl;
+			cerr << "[Error] LightHub::handleReceive: " << e.what() << endl;
 		}
 	}
 	
