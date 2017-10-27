@@ -4,16 +4,18 @@
 LightEffectSoundSolid::LightEffectSoundSolid(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer,
 		LightEffectSoundSolid::Channel _channel)
-	:	LightEffect({LightStrip::Type::Analog, LightStrip::Type::Digital},
-		{{"bass freq", 150.}, {"trebble freq", 4000.}, {"bass boost", 10.},
+	:	LightEffect{{{"bass freq", 150.}, {"trebble freq", 4000.}, {"bass boost", 10.},
 		{"trebble boost", 0.}, {"start frequency", 0.}, {"end frequency", 20000.},
 		{"db scaler", 150.}, {"db factor", 1.}, {"average factor", 0.5},
 		{"change factor", 0.},
 		{"noise floor", 50.}, {"average filter strength", 0.4}, {"min saturation", 0.7},
-		{"color filter strength", 0.8}, {"threshold", 0.}})
+		{"color filter strength", 0.8}, {"threshold", 0.}}}
 	,	spectrumAnalyzer{_spectrumAnalyzer}
-	,	channel{_channel} {
-	
+	,	channel{_channel}
+	,	prevSpectrum{0, 0, 0}
+	,	bassIndex{-1}
+	,	endIndex{-1}
+	,	avg{0.} {
 }
 
 void LightEffectSoundSolid::tick() {
@@ -21,8 +23,6 @@ void LightEffectSoundSolid::tick() {
 	switch(channel) {
 		case LightEffectSoundSolid::Channel::Left:
 			renderColor(spectrumAnalyzer->getLeftSpectrum());
-
-			//std::cout << c.toString() << std::endl;
 		break;
 
 		case LightEffectSoundSolid::Channel::Center:
@@ -35,17 +35,13 @@ void LightEffectSoundSolid::tick() {
 	}
 }
 
-void LightEffectSoundSolid::updateStrip(std::shared_ptr<LightStrip> strip) {
-	auto buffer = strip->getBuffer();
+void LightEffectSoundSolid::updateLight(std::shared_ptr<Light>& light) {
+	auto buffer = light->getBuffer();
 	
-	buffer->setAll(c);
+	buffer.setAll(c);
 }
 
 void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
-	static int bassIndex = -1, endIndex = -1;
-	static double avg = 0.;
-	static Spectrum prevSpectrum(0, 0, 0);
-
 	double bassFreq = getParameter("bass freq").getValue().getDouble();
 	double trebbleFreq = getParameter("trebble freq").getValue().getDouble();
 	double bassBoost = getParameter("bass boost").getValue().getDouble();
@@ -58,9 +54,9 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	double changeFactor = getParameter("change factor").getValue().getDouble();
 	double noiseFloor = getParameter("noise floor").getValue().getDouble();
 	double avgFilterStrength = getParameter("average filter strength").getValue().getDouble();
-	double minSaturation = getParameter("min saturation").getValue().getDouble();
+	uint8_t minSaturation = getParameter("min saturation").getValue().getDouble()*255;
 	double filterStrength = getParameter("color filter strength").getValue().getDouble();
-	double threshold = getParameter("threshold").getValue().getDouble();
+	uint8_t threshold = getParameter("threshold").getValue().getDouble()*255;
 
 	double r = 0., g = 0., b = 0.;
 	size_t binCount = spectrum.getBinCount();
@@ -82,6 +78,8 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	for(unsigned int i = 0; i < endIndex; ++i) {
 		curAvg += spectrum.getByIndex(i).getEnergy();
 	}
+	std::cout << curAvg << std::endl;
+
 	curAvg = 20.*std::log10(curAvg/endIndex) + noiseFloor;
 
 	//double curAvg = spectrum.getAverageEnergyDB() + noiseFloor;
@@ -118,7 +116,7 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 				hue = 60. + 180.*(i-yellowPoint) / (binCount - yellowPoint - 1);
 			}
 
-			Color c = Color::HSV(hue, 1.f, 1.f);
+			Color c = Color::HSV(255.f*hue/360.f, 255, 255);
 
 			double db = bin.getEnergyDB();
 			
@@ -170,10 +168,10 @@ void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
 	}
 
 	Color cTmp(r, g, b);
-	double h = cTmp.getHue(), s = cTmp.getHSVSaturation(), v = cTmp.getValue();
+	uint8_t h = cTmp.getHue(), s = cTmp.getSat(), v = cTmp.getVal();
 
 	if(v < threshold) {
-		v = 0.;
+		v = 0;
 	}
 
 	//Enforce saturation minimum

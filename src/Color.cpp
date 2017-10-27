@@ -1,12 +1,13 @@
 #include "Color.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 Color::Color() {
 	r = g = b = 0;
 }
 
-Color::Color(int r, int g, int b) {
+Color::Color(uint8_t r, uint8_t g, uint8_t b) {
 	this->r = r;
 	this->g = g;
 	this->b = b;
@@ -40,15 +41,15 @@ std::string Color::toString() const {
 	return "(" + std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ")";
 }
 
-byte Color::getRed() const {
+uint8_t Color::getRed() const {
 	return r;
 }
 
-byte Color::getGreen() const {
+uint8_t Color::getGreen() const {
 	return g;
 }
 
-byte Color::getBlue() const {
+uint8_t Color::getBlue() const {
 	return b;
 }
 
@@ -68,8 +69,8 @@ void Color::gammaCorrect(double gamma) {
 	b = 255. * std::pow(b/255., gamma) + 0.5;
 }
 
-float Color::getHue() const {
-	int min = std::min(r, std::min(g, b)), max = std::max(r, std::max(g, b));
+float Color::getHueF() const {
+	int min = std::min({r, g, b}), max = std::max({r, g, b});
 	float chroma = max - min;
 	float hprime, hue;
 
@@ -92,98 +93,39 @@ float Color::getHue() const {
 	return hue;
 }
 
-float Color::getHSLSaturation() const {
-	float min = std::min(r, std::min(g, b)), max = std::max(r, std::max(g, b));
-	float chroma = max - min;
-	float saturation, lightness = getLightness();
-	
-	if (chroma == 0)
-		saturation = 0;
-	else
-		saturation = (float)chroma / (1 - std::abs(2.*lightness - 1));
-
-	return saturation / 255.;
+uint8_t Color::getHue() const {
+	return getHueF() * 255.f/360.f;
 }
 
-float Color::getLightness() const {
-	byte min = std::min(r, std::min(g, b)), max = std::max(r, std::max(g, b));
-
-	return ((float)min + max) / (2. * 255.);
-}
-
-float Color::getHSVSaturation() const {
-	float min = std::min(r, std::min(g, b)), max = std::max(r, std::max(g, b));
+float Color::getSatF() const {
+	float min = std::min({r, g, b}), max = std::max({r, g, b});
 	float chroma = max - min;
-	float saturation, value = getValue();
+	float saturation, value = getValF();
 
 	if (chroma == 0)
 		saturation = 0;
 	else
 		saturation = chroma / value;
 
-	return saturation / 255.;
+	return saturation/255.f;
 }
 
-float Color::getValue() const {
-	return std::max({ r, g, b }) / 255.f;
+uint8_t Color::getSat() const {
+	return 255.f*getSatF();
 }
 
-void Color::print() const {
-	printf("(%d, %d, %d)\n", r, g, b);
+float Color::getValF() const {
+	return std::max({r, g, b})/255.f;
 }
 
-Color Color::HSL(float hue, float saturation, float lightness) {
+uint8_t Color::getVal() const {
+	return 255.f*getValF();
+}
+
+Color Color::HSV(uint8_t h, uint8_t s, uint8_t v) {
 	float chroma, hprime, x, m, r, g, b;
-
-	hue = std::fmod(hue, 360.);
-
-	hprime = hue / 60.f;
-
-	chroma = (1 - std::abs(2 * lightness - 1)) * saturation;
-	x = (1 - std::abs(std::fmod(hprime, 2) - 1)) * chroma;
-
-	if (hprime < 1) {
-		r = chroma;
-		g = x;
-		b = 0;
-	}
-	else if (hprime < 2) {
-		r = x;
-		g = chroma;
-		b = 0;
-	}
-	else if (hprime < 3) {
-		r = 0;
-		g = chroma;
-		b = x;
-	}
-	else if (hprime < 4) {
-		r = 0;
-		g = x;
-		b = chroma;
-	}
-	else if (hprime < 5) {
-		r = x;
-		g = 0;
-		b = chroma;
-	}
-	else {
-		r = chroma;
-		g = 0;
-		b = x;
-	}
-
-	m = lightness - chroma / 2.;
-
-	r += m;
-	g += m;
-	b += m;
-
-	return Color(255 * r, 255 * g, 255 * b);
-}
-
-Color Color::HSV(float hue, float saturation, float value) {
-	float chroma, hprime, x, m, r, g, b;
+	
+	float hue = 360.f*h/255.f, saturation = s/255.f, value = v/255.f;
 
 	hue = std::fmod(hue, 360.);
 

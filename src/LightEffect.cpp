@@ -3,88 +3,70 @@
 #include <stdexcept>
 #include <algorithm>
 
-LightEffect::LightEffect(const std::vector<LightStrip::Type>& _types,
-	const std::vector<Parameter>& _parameters)
-	:	ConfigurableObject(_parameters)
-	,	supportedTypes(_types) {
+using namespace std;
+
+LightEffect::LightEffect(const std::vector<Parameter>& _parameters)
+	:	ConfigurableObject(_parameters) {
 }
 
 LightEffect::~LightEffect() {
 }
 
-void LightEffect::addStrip(const std::shared_ptr<LightStrip>& strip) {
-	std::unique_lock<std::mutex> stripsLock(stripsMutex);
+void LightEffect::addLight(std::shared_ptr<Light>& light) {
+	std::unique_lock<std::mutex> lightLock(lightMutex);
 	
-	auto id = strip->getID();
+	auto fullName = light->getFullName();
 
-	if(std::find_if(strips.begin(), strips.end(),
-		[id](const auto& pair) {
-			return pair.first == id;
-		}) != strips.end()) {
-		throw Exception(EXCEPTION_LIGHT_EFFECT_STRIP_ALREADY_CONNECTED,
-			"LightEffect::addStrip: Strip already connected");
+	if(lights.find(fullName) != lights.end()) {
+		cerr << "[Error] LightEffect::addLight: Light '" << fullName << "' already added"
+			<< endl;
 	}
-
-	if(find(supportedTypes.begin(), supportedTypes.end(), strip->getType())
-		== supportedTypes.end()) {
-		throw Exception(EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE,
-			"LightEffect::addStrip: Strip type unsupported");
+	else {
+		lights.emplace(fullName, light);
 	}
 	
-	auto pair = std::pair<size_t, std::weak_ptr<LightStrip>>(id, strip);
-
-	strips.push_back(pair);
-
 	if(onAdd) {
-		onAdd(pair);
+		onAdd(light);
 	}
 }
 
-void LightEffect::removeStrip(size_t id) {
-	std::unique_lock<std::mutex> stripsLock(stripsMutex);
+void LightEffect::removeLight(const std::string& fullName) {
+	unique_lock<mutex> lightLock(lightMutex);
 
-	//Find the node in the vector
-	auto found = std::find_if(strips.begin(), strips.end(),
-		[id](const auto& pair) {
-			return pair.first == id;
-		});
-
-	if(found == strips.end()) {
-		//We didn't find the node
-		throw Exception(EXCEPTION_LIGHT_EFFECT_STRIP_NOT_FOUND,
-			"LightEffect::removeStrip: strip not found in vector");
+	if(lights.find(fullName) == lights.end()) {
+		throw runtime_error(string("LightEffect::addLight: Light '") + fullName + "' not found");
 	}
-
-	if(onRemove) {
-		onRemove(*found);
+	else {
+		auto sharedLight = lights[fullName].lock();
+		if(sharedLight && onRemove) {
+			onRemove(sharedLight);
+		}
+		lights.erase(fullName);
 	}
-
-	//Remove the node
-	strips.erase(found);
 }
 
 void LightEffect::update() {
-	std::vector<size_t> deadStrips;
+	vector<string> deadLights;
 
 	//Call 'tick' (to allow effect to perform updates)
 	tick();
 
 	{
-		std::unique_lock<std::mutex> stripsLock(stripsMutex);
+		unique_lock<mutex> lightLock(lightMutex);
 
-		for(auto& pair : strips) {
-			auto sharedStrip = pair.second.lock();
+		for(auto& light : lights) {
+			auto sharedLight = light.second.lock();
 
-			if(sharedStrip) {
-				updateStrip(sharedStrip);
+			if(sharedLight) {
+				updateLight(sharedLight);
 			}
 			else {
-				deadStrips.push_back(pair.first);
+				deadLights.push_back(light.first);
 			}
 		}
 	}
 
-	for(auto &strip : deadStrips) {
-		removeStrip(strip);
+	for(auto &light : deadLights) {
+		removeLight(light);
 	}
 }

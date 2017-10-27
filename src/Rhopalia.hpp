@@ -22,18 +22,18 @@ public:
 
 	//Overload to add listener of external LightHub events
 	template <class T>
-	void addListener(LightHub::ListenerType_e listenType, T slot) {
+	void addListener(LightHub::ListenerType listenType, T slot) {
 		hub.addListener(listenType, slot);
 	}
 
 	void addEffect(const std::shared_ptr<LightEffect>&);
 
-	std::vector<std::shared_ptr<LightNode>>::iterator nodeBegin();
-	std::vector<std::shared_ptr<LightNode>>::iterator nodeEnd();
+	LightHub::NodeIterator nodeBegin();
+	LightHub::NodeIterator nodeEnd();
 
 private:
 	//TODO: Read these values from a config file
-	uint16_t PORT = 54923;
+	uint16_t PORT = 5492;
 	const uint32_t UPDATE_PERIOD = 20;
 
 	void update();

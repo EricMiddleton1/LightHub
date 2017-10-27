@@ -10,7 +10,7 @@ public:
 
 private:
 	virtual void tick() override;
-	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
+	virtual void updateLight(std::shared_ptr<Light>&) override;
 
 	//single color for all attached lights
 	Color color;

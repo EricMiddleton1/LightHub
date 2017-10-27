@@ -2,13 +2,12 @@
 
 
 LightEffectSolid::LightEffectSolid()
-	:	LightEffect({LightStrip::Type::Analog, LightStrip::Type::Digital},
-		{{"color", Color()}}) {
+	:	LightEffect({{"color", Color()}}) {
 }
 
 void LightEffectSolid::tick() {
 }
 
-void LightEffectSolid::updateStrip(std::shared_ptr<LightStrip> strip) {
-	strip->getBuffer()->setAll(getParameter("color").getValue().getColor());
+void LightEffectSolid::updateLight(std::shared_ptr<Light>& light) {
+	light->getBuffer().setAll(getParameter("color").getValue().getColor());
 }

@@ -5,7 +5,7 @@
 #include <thread>
 #include <iostream>
 #include <deque>
-#include <unordered_map>
+#include <map>
 
 #include <boost/asio.hpp>
 #include <boost/signals2.hpp>
@@ -16,9 +16,19 @@
 
 class Rhopalia;
 
+struct LightNode {
+	LightNode(const std::string& name);
+
+	std::string name;
+	std::vector<std::shared_ptr<Light>> lights;
+};
+
+
 class LightHub
 {
 public:
+	using NodeIterator = std::map<boost::asio::ip::address, LightNode>::const_iterator;
+
 	enum class ListenerType {
 		LightDiscover
 	};
@@ -37,13 +47,16 @@ public:
 		}
 	}
 
-	std::vector<std::shared_ptr<LightNode>>::iterator begin();
-	std::vector<std::shared_ptr<LightNode>>::iterator end();
+	NodeIterator begin() const;
+	NodeIterator end() const;
 
 	size_t getNodeCount() const;
 
 private:
 	friend class Rhopalia;
+	friend class Light;
+
+	void update(Light& light);
 
 	void threadRoutine();
 
@@ -66,8 +79,7 @@ private:
 	//Signals
 	boost::signals2::signal<void(std::shared_ptr<Light>)> sigLightDiscover;
 
-	std::vector<std::shared_ptr<Light>> lights;
-	std::unordered_map<boost::asio::ip::address, std::string> nodeMap;
+	std::map<boost::asio::ip::address, LightNode> nodes;
 
 	//Thread stuff
 	boost::asio::io_service ioService;

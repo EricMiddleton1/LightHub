@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vector>
+#include <unordered_map>
+#include <string>
 #include <memory>
 #include <functional>
 #include <utility>
 #include <mutex>
 
-#include "Exception.hpp"
-#include "LightStrip.hpp"
+#include "Light.hpp"
 #include "Parameter.hpp"
 #include "ConfigurableObject.hpp"
 
@@ -17,30 +17,24 @@ class Rhopalia;
 class LightEffect : public ConfigurableObject
 {
 public:
-	static const uint16_t EXCEPTION_LIGHT_EFFECT_STRIP_NOT_FOUND = 0x0020;
-	static const uint16_t EXCEPTION_LIGHT_EFFECT_UNSUPPORTED_TYPE = 0x0021;
-	static const uint16_t EXCEPTION_LIGHT_EFFECT_STRIP_ALREADY_CONNECTED = 0x0022;
-
-	LightEffect(const std::vector<LightStrip::Type>& supportedTypes,
-		const std::vector<Parameter>& parameters);
+	LightEffect(const std::vector<Parameter>& parameters);
 	virtual ~LightEffect();
 
-	void addStrip(const std::shared_ptr<LightStrip>&);
-	void removeStrip(size_t id);
+	void addLight(std::shared_ptr<Light>&);
+	void removeLight(const std::string& name);
 
 protected:
 	virtual void tick() = 0;
-	virtual void updateStrip(std::shared_ptr<LightStrip>) = 0;
+	virtual void updateLight(std::shared_ptr<Light>&) = 0;
 
-	std::function<void(std::pair<size_t, std::weak_ptr<LightStrip>>&)> onAdd, onRemove;
+	std::function<void(std::shared_ptr<Light>&)> onAdd, onRemove;
 
 private:
 	friend class Rhopalia;
 
+	
 	void update();
 
-	std::vector<std::pair<size_t, std::weak_ptr<LightStrip>>> strips;
-	mutable std::mutex stripsMutex;
-
-	std::vector<LightStrip::Type> supportedTypes;
+	std::unordered_map<std::string, std::weak_ptr<Light>> lights;
+	mutable std::mutex lightMutex;
 };

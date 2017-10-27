@@ -11,17 +11,23 @@
 
 #include "Color.hpp"
 
+class LightHub;
 class LightBuffer;
+struct LightNode;
 
 class Light
 {
 public:
-	Light(const boost::asio::ip::udp::endpoint& endpoint, uint8_t lightID,
+	Light(LightHub&, LightNode&, const boost::asio::ip::address& address, uint8_t lightID,
 		const std::string& name, int size);
 
-	boost::asio::ip::udp::endpoint getEndpoint() const;
+	boost::asio::ip::address getAddress() const;
+
 	uint8_t getLightID() const;
+	
 	std::string getName() const;
+	std::string getFullName() const;
+	
 	size_t getSize() const;
 	const std::vector<Color>& getPixels() const;
 
@@ -30,7 +36,12 @@ public:
 private:
 	friend class LightBuffer;
 
-	boost::asio::ip::udp::endpoint endpoint;
+	void update();
+
+	LightHub& hub;
+	LightNode& node;
+
+	boost::asio::ip::address address;
 	uint8_t lightID;
 
 	std::string name;
@@ -51,5 +62,5 @@ public:
 	void setAll(const Color& c);
 
 private:
-	Light& strip;
+	Light& light;
 };

@@ -22,11 +22,11 @@ void Rhopalia::addEffect(const std::shared_ptr<LightEffect>& effect) {
 	effects.push_back(effect);
 }
 
-std::vector<std::shared_ptr<LightNode>>::iterator Rhopalia::nodeBegin() {
+LightHub::NodeIterator Rhopalia::nodeBegin() {
 	return hub.begin();
 }
 
-std::vector<std::shared_ptr<LightNode>>::iterator Rhopalia::nodeEnd() {
+LightHub::NodeIterator Rhopalia::nodeEnd() {
 	return hub.end();
 }
 
@@ -34,6 +34,4 @@ void Rhopalia::update() {
 	for(auto& effect : effects) {
 		effect->update();
 	}
-
-	hub.updateLights();
 }

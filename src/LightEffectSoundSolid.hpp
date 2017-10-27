@@ -22,12 +22,17 @@ public:
 
 private:
 	virtual void tick() override;
-	virtual void updateStrip(std::shared_ptr<LightStrip>) override;
+	virtual void updateLight(std::shared_ptr<Light>&) override;
 
 	void renderColor(Spectrum spectrum);
 	
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 	Channel channel;
+
+	Spectrum prevSpectrum;
+	int bassIndex, endIndex;
+	double avg;
+
 
 	Color c;
 };

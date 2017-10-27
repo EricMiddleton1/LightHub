@@ -10,5 +10,5 @@ public:
 
 private:
 	virtual void tick() override;
-	virtual void updateStrip(std::shared_ptr<LightStrip> strip) override;
+	virtual void updateLight(std::shared_ptr<Light>&) override;
 };
