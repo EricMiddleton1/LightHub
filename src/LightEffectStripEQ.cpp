@@ -60,7 +60,16 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 		binCount = smoothed.size();
 	
 	for(size_t i = 0; i < binCount; ++i) {
-		Color c = Color::HSV(255.f*i*240./(binCount-1)/360.f, 255, 255.f*smoothed[i]);
+		float h = 255.f*i*240./(binCount-1)/360.f, s = 255.f, v = 255.f*smoothed[i];
+
+		if(v < 0) {
+			v = 0;
+		}
+		else if(v > 255) {
+			v = 255;
+		}
+
+		Color c = Color::HSV(h, s, v);
 		c.gammaCorrect(2.2);
 
 		size_t ledStart = i*ledCount/binCount,
