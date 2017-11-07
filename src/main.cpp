@@ -12,27 +12,47 @@
 using namespace std;
 
 int main() {
-	std::shared_ptr<LightEffect> lightEffect;
+	std::shared_ptr<LightEffect> matrixEQ, soundSolid, stripEQ;
 
 	auto audioDevice = make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
 	auto spectrumAnalyzer = make_shared<SpectrumAnalyzer>(audioDevice, 32.7032, 16744.0384, 3, 4096);
 
-	lightEffect = make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
-	lightEffect->setParameter("width", 32);
-	lightEffect->setParameter("height", 24);
+	matrixEQ = make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
+	matrixEQ->setParameter("width", 32);
+	matrixEQ->setParameter("height", 24);
+
+	soundSolid = make_shared<LightEffectSoundSolid>(spectrumAnalyzer);
+	//soundSolid->setParameter("db scaler", 500.);
+	//soundSolid->setParameter("db factor", 2.);
+	//soundSolid->setParameter("average factor", 1.);
+	//soundSolid->setParameter("noise floor", 60.);
+
+	stripEQ = make_shared<LightEffectStripEQ>(spectrumAnalyzer);
 
 	Rhopalia rhopalia;
 	rhopalia.addListener(LightHub::ListenerType::LightDiscover,
-	[&lightEffect](std::shared_ptr<Light> light) {
+	[&matrixEQ, &soundSolid, &stripEQ](std::shared_ptr<Light> light) {
 		std::cout << "[Info] Light discovered: " << light->getName()
 			<< " with " << light->getSize() << " LEDs" << std::endl;
 
-		if(!lightEffect->addLight(light)) {
-			std::cout << "[Error] Failed to add light to effect" << std::endl;
+		if(matrixEQ->addLight(light)) {
+			std::cout << "\tLight added to effect 'Matrix EQ'\n" << std::endl;
+		}
+		else if((light->getSize() > 1) && stripEQ->addLight(light)) {
+			std::cout << "\tLight added to effect 'Strip EQ'\n" << std::endl;
+		}
+		else if(soundSolid->addLight(light)) {
+			std::cout << "\tLight added to effect 'Sound Solid'\n" << std::endl;
+		}
+		else {
+			std::cerr << "\tFailed to add light to an effect\n" << std::endl;
 		}
 	});
 
-	rhopalia.addEffect(lightEffect);
+	rhopalia.addEffect(matrixEQ);
+	rhopalia.addEffect(soundSolid);
+	rhopalia.addEffect(stripEQ);
+
 	audioDevice->startStream();
 
 	while(true) {
