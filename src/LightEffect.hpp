@@ -11,7 +11,6 @@
 #include "Parameter.hpp"
 #include "ConfigurableObject.hpp"
 
-//Forward declaration
 class Rhopalia;
 
 class LightEffect : public ConfigurableObject
