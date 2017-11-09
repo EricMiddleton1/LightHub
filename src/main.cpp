@@ -20,6 +20,7 @@ int main() {
 	matrixEQ = make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 	matrixEQ->setParameter("width", 32);
 	matrixEQ->setParameter("height", 24);
+	matrixEQ->setParameter("interleave", false);
 
 	soundSolid = make_shared<LightEffectSoundSolid>(spectrumAnalyzer);
 	//soundSolid->setParameter("db scaler", 500.);

@@ -6,7 +6,8 @@
 
 LightEffectMatrixEQ::LightEffectMatrixEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
-	:	LightEffect({{"width", 2}, {"height", 2}, {"invert", false}, {"multiplier", 1.1}, {"band count",
+	:	LightEffect({{"width", 2}, {"height", 2}, {"invert", false}, {"multiplier", 1.1},
+			{"interleave", false}, {"band count",
 			(double)_spectrumAnalyzer->getLeftSpectrum().getBinCount(),
 			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
@@ -80,6 +81,7 @@ void LightEffectMatrixEQ::tick() {
 void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 	auto matrixWidth = getParameter("width").getValue().getInt();
 	auto matrixHeight = getParameter("height").getValue().getInt();
+	auto interleave = getParameter("interleave").getValue().getBool();
 
 	auto buffer = light->getBuffer();
 	
@@ -135,10 +137,11 @@ void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 
 			for(unsigned int y = 0; y <= top; ++y) {
 				unsigned int yPos = (invert) ? (y) : (matrixHeight - y - 1);
+				unsigned int xPos = (interleave && (y & 0x01)) ? (matrixWidth - x - 1) : x;
 
 				double value = (y == top) ? frac : 1.;
 
-				buffer[yPos*matrixWidth + x] = Color::HSV(hue*255.f/360.f, 255, 255.f*value);
+				buffer[yPos*matrixWidth + xPos] = Color::HSV(hue*255.f/360.f, 255, 255.f*value);
 				//buffer->setColor(x, yPos,
 					//Color::HSV(hue, 1.f, std::pow(1.f - 1.0f*y / top, 1.0)));
 			}
