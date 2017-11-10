@@ -137,7 +137,7 @@ void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 
 			for(unsigned int y = 0; y <= top; ++y) {
 				unsigned int yPos = (invert) ? (y) : (matrixHeight - y - 1);
-				unsigned int xPos = (interleave && (y & 0x01)) ? (matrixWidth - x - 1) : x;
+				unsigned int xPos = (interleave && !(y & 0x01)) ? (matrixWidth - x - 1) : x;
 
 				double value = (y == top) ? frac : 1.;
 
