@@ -71,7 +71,7 @@ string Light::getName() const {
 }
 
 string Light::getFullName() const {
-	return node.name + "/" + name;
+	return node.name + ":" + name;
 }
 
 const vector<Color>& Light::getPixels() const {

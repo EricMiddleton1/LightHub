@@ -33,6 +33,13 @@ public:
 
 	LightBuffer getBuffer();
 
+	//TCP update commands
+	void turnOn();
+	void turnOff();
+	void setBrightness(uint8_t brightness);
+	void changeBrightness(int8_t deltaBrightness);
+	void setColor(const Color& c);
+
 private:
 	friend class LightBuffer;
 

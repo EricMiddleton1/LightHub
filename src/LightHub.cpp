@@ -189,3 +189,29 @@ void LightHub::update(Light& light) {
 	sendDatagram(light.getAddress(),
 		Packet::UpdateColor(light.getLightID(), light.getPixels()).asDatagram());
 }
+
+void LightHub::turnOn(Light& light) {
+	sendDatagram(light.getAddress(),
+		Packet::TurnOn(light.getLightID()).asDatagram());
+}
+
+void LightHub::turnOff(Light& light) {
+	sendDatagram(light.getAddress(),
+		Packet::TurnOff(light.getLightID()).asDatagram());
+}
+
+void LightHub::setBrightness(Light& light, uint8_t brightness) {
+	sendDatagram(light.getAddress(),
+		Packet::SetBrightness(light.getLightID(), brightness).asDatagram());
+}
+
+void LightHub::setColor(Light& light, const Color& c) {
+	sendDatagram(light.getAddress(),
+		Packet::SetColor(light.getLightID(), c).asDatagram());
+}
+
+void LightHub::changeBrightness(Light& light, int8_t deltaBrightness) {
+	sendDatagram(light.getAddress(),
+		Packet::ChangeBrightness(light.getLightID(), deltaBrightness).asDatagram());
+}
+

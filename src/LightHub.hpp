@@ -52,11 +52,17 @@ public:
 
 	size_t getNodeCount() const;
 
+	void update(Light& light);
+
+	void turnOn(Light& light);
+	void turnOff(Light& light);
+	void setBrightness(Light& light, uint8_t brightness);
+	void setColor(Light& light, const Color& c);
+	void changeBrightness(Light& light, int8_t deltaBrightness);
+
 private:
 	friend class Rhopalia;
 	friend class Light;
-
-	void update(Light& light);
 
 	void threadRoutine();
 
