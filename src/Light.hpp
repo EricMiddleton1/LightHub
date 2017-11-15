@@ -30,6 +30,7 @@ public:
 	
 	size_t getSize() const;
 	const std::vector<Color>& getPixels() const;
+	uint8_t getTransitionPeriod() const;
 
 	LightBuffer getBuffer();
 
@@ -45,7 +46,8 @@ private:
 	uint8_t lightID;
 
 	std::string name;
-
+	
+	uint8_t transitionPeriod, transitionPeriodBuffer;
 	std::vector<Color> pixels, pixelBuffer;
 	mutable std::mutex pixelMutex, bufferMutex;
 };
@@ -62,6 +64,9 @@ public:
 	const Color& operator[](int index) const;
 
 	void setAll(const Color& c);
+
+	uint8_t getTransitionPeriod() const;
+	void setTransitionPeriod(uint8_t period);
 
 private:
 	Light& light;

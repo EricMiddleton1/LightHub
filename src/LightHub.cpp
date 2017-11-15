@@ -187,5 +187,6 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 
 void LightHub::update(Light& light) {
 	sendDatagram(light.getAddress(),
-		Packet::UpdateColor(light.getLightID(), light.getPixels()).asDatagram());
+		Packet::UpdateColor(light.getLightID(), light.getTransitionPeriod(),
+			light.getPixels()).asDatagram());
 }

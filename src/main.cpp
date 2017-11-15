@@ -23,6 +23,8 @@ int main() {
 	matrixEQ->setParameter("interleave", true);
 
 	soundSolid = make_shared<LightEffectSoundSolid>(spectrumAnalyzer);
+	soundSolid->setParameter("color filter strength", 0.5);
+	//soundSolid = make_shared<LightEffectFade>();
 	//soundSolid->setParameter("db scaler", 500.);
 	//soundSolid->setParameter("db factor", 2.);
 	//soundSolid->setParameter("average factor", 1.);
