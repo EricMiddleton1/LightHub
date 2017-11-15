@@ -86,7 +86,6 @@ void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 	auto buffer = light->getBuffer();
 	
 	buffer.setAll({});
-	buffer.setTransitionPeriod(100);
 
 	std::vector<double> bars;
 

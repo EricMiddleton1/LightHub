@@ -14,7 +14,7 @@ LightBuffer::~LightBuffer() {
 	{
 		lock_guard<mutex> pixelLock(light.pixelMutex);
 		light.pixels = light.pixelBuffer;
-		light.transitionPeriod = light.transitionPeriodBuffer;
+		light.transitionPeriods = light.transitionPeriodsBuffer;
 
 		light.bufferMutex.unlock();
 	}
@@ -50,12 +50,10 @@ void LightBuffer::setAll(const Color& c) {
 	}
 }
 
-void LightBuffer::setTransitionPeriod(uint8_t period) {
-	light.transitionPeriodBuffer = period;
-}
-
-uint8_t LightBuffer::getTransitionPeriod() const {
-	return light.transitionPeriodBuffer;
+void LightBuffer::setTransitionPeriod(
+	const std::tuple<uint8_t, uint8_t, uint8_t>& periods) {
+	
+	light.transitionPeriodsBuffer = periods;
 }
 
 Light::Light(LightHub& _hub, LightNode& _node, const boost::asio::ip::address& _address,
@@ -65,8 +63,8 @@ Light::Light(LightHub& _hub, LightNode& _node, const boost::asio::ip::address& _
 	,	address{_address}
 	,	lightID{_lightID}
 	,	name{_name}
-	,	transitionPeriod{0}
-	,	transitionPeriodBuffer{0}
+	,	transitionPeriods{0, 0, 0}
+	,	transitionPeriodsBuffer{0, 0, 0}
 	,	pixels{_size}
 	,	pixelBuffer{_size} {
 }
@@ -93,10 +91,16 @@ const vector<Color>& Light::getPixels() const {
 	return pixels;
 }
 
-uint8_t Light::getTransitionPeriod() const {
-	std::lock_guard<std::mutex> pixelLock{pixelMutex};
+uint8_t Light::getHuePeriod() const {
+	return std::get<0>(transitionPeriods);
+}
 
-	return transitionPeriod;
+uint8_t Light::getSatPeriod() const {
+	return std::get<1>(transitionPeriods);
+}
+
+uint8_t Light::getValPeriod() const {
+	return std::get<2>(transitionPeriods);
 }
 
 size_t Light::getSize() const {

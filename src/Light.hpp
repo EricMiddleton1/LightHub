@@ -4,6 +4,7 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <tuple>
 #include <iostream>
 #include <cstdint>
 
@@ -30,7 +31,9 @@ public:
 	
 	size_t getSize() const;
 	const std::vector<Color>& getPixels() const;
-	uint8_t getTransitionPeriod() const;
+	uint8_t getHuePeriod() const;
+	uint8_t getSatPeriod() const;
+	uint8_t getValPeriod() const;
 
 	LightBuffer getBuffer();
 
@@ -47,7 +50,7 @@ private:
 
 	std::string name;
 	
-	uint8_t transitionPeriod, transitionPeriodBuffer;
+	std::tuple<uint8_t, uint8_t, uint8_t> transitionPeriods, transitionPeriodsBuffer;
 	std::vector<Color> pixels, pixelBuffer;
 	mutable std::mutex pixelMutex, bufferMutex;
 };
@@ -65,8 +68,7 @@ public:
 
 	void setAll(const Color& c);
 
-	uint8_t getTransitionPeriod() const;
-	void setTransitionPeriod(uint8_t period);
+	void setTransitionPeriod(const std::tuple<uint8_t, uint8_t, uint8_t>& periods);
 
 private:
 	Light& light;
