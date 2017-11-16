@@ -43,7 +43,7 @@ void LightEffectSoundSolid::updateLight(std::shared_ptr<Light>& light) {
 	auto buffer = light->getBuffer();
 	
 	buffer.setAll(c);
-	buffer.setTransitionPeriod({2, 5, 10});
+	buffer.setTransitionPeriod({5, 10, 10});
 }
 
 void LightEffectSoundSolid::renderColor(Spectrum spectrum) {
