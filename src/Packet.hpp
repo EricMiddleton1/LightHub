@@ -16,8 +16,10 @@ public:
 		LightInfoResponse,
 		TurnOn,
 		TurnOff,
-		UpdateColor,
-		ChangeBrightness
+		SetBrightness,
+		SetColor,
+		ChangeBrightness,
+		UpdateColor
 	};
 
 	Packet(ID);

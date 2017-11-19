@@ -56,7 +56,6 @@ Packet Packet::LightInfoResponse(uint16_t ledCount, const std::string& name) {
 Packet Packet::UpdateColor(uint8_t lightID, uint8_t hPeriod, uint8_t sPeriod,
 	uint8_t vPeriod, const std::vector<Color>& leds) {
 	Packet p{ID::UpdateColor, lightID};
-	p.payload.push_back(0x07); //Update H, S, V
 	p.payload.push_back(hPeriod);
 	p.payload.push_back(sPeriod);
 	p.payload.push_back(vPeriod);
