@@ -130,6 +130,25 @@ FrequencyBin& Spectrum::get(double frequency) {
 	return *foundBin;
 }
 
+const FrequencyBin& Spectrum::get(double frequency) const {
+	auto foundBin = std::find_if(std::begin(bins),
+		std::end(bins),
+		[&](const FrequencyBin& bin) {
+			return frequency >= bin.fStart && frequency < bin.fEnd;
+		});
+
+	if(foundBin == std::end(bins)) {
+		throw Exception(ERROR_BIN_NOT_FOUND,
+			"Spectrum::get: Frequency bin not found");
+	}
+
+	return *foundBin;
+}
+
+const FrequencyBin& Spectrum::getByIndex(size_t index) const {
+	return bins[index];
+}
+
 FrequencyBin& Spectrum::getByIndex(size_t index) {
 	return bins[index];
 }

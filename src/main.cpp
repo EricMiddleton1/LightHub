@@ -13,7 +13,7 @@
 using namespace std;
 
 int main() {
-	std::shared_ptr<LightEffect> matrixEQ, soundSolid, stripEQ, stripBeat;
+	std::shared_ptr<LightEffect> matrixEQ, soundSolid, stripEQ, stripSmoothEQ;
 
 	auto audioDevice = make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
 	auto spectrumAnalyzer = make_shared<SpectrumAnalyzer>(audioDevice, 32.7032, 16744.0384, 3, 4096);
@@ -32,11 +32,14 @@ int main() {
 	//soundSolid->setParameter("noise floor", 60.);
 
 	stripEQ = make_shared<LightEffectStripEQ>(spectrumAnalyzer);
-	stripBeat = make_shared<LightEffectStripBeat>(spectrumAnalyzer);
+	
+	stripSmoothEQ = make_shared<LightEffectStripEQ>(spectrumAnalyzer);
+	stripSmoothEQ->setParameter("reverse", true);
+	stripSmoothEQ->setParameter("smooth", true);
 
 	Rhopalia rhopalia;
 	rhopalia.addListener(LightHub::ListenerType::LightDiscover,
-	[&matrixEQ, &soundSolid, &stripEQ, &stripBeat](std::shared_ptr<Light> light) {
+	[&matrixEQ, &soundSolid, &stripEQ, &stripSmoothEQ](std::shared_ptr<Light> light) {
 		std::cout << "[Info] Light discovered: " << light->getName()
 			<< " with " << light->getSize() << " LEDs" << std::endl;
 
@@ -46,7 +49,7 @@ int main() {
 		else if((light->getSize() == 208) && stripEQ->addLight(light)) {
 			std::cout << "\tLight added to effect 'Strip EQ'\n" << std::endl;
 		}
-		else if(stripBeat->addLight(light)) {
+		else if(stripSmoothEQ->addLight(light)) {
 			std::cout << "\tLight added to effect 'Strip Beat'\n" << std::endl;
 		}
 		else if(soundSolid->addLight(light)) {
@@ -60,7 +63,7 @@ int main() {
 	rhopalia.addEffect(matrixEQ);
 	rhopalia.addEffect(soundSolid);
 	rhopalia.addEffect(stripEQ);
-	rhopalia.addEffect(stripBeat);
+	rhopalia.addEffect(stripSmoothEQ);
 
 	audioDevice->startStream();
 

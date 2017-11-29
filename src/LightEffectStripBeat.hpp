@@ -16,21 +16,30 @@ private:
 	static constexpr double MIN_THRESHOLD = 0.15;
 	static constexpr double MAX_THRESHOLD = 0.6;
 
-	struct Beat {
-		static const int MERGE_TIMEOUT = 6;
-		static const int ACTIVITY_TIMEOUT = 10;
-		static const int TIMEOUT = 25;
-		static constexpr double MIN_VALUE = 0.1;
+	struct Bar {
+		struct Beat {
+			int bin;
+			size_t startTime;
+		};
+
+		static const int MERGE_RANGE = 2;
+		static const int MERGE_TIMEOUT = 10;
+		static const int ACTIVITY_TIMEOUT = 50;
+		static const int TIMEOUT = 100000;
+		static constexpr double MIN_VALUE = 0.;
 		static constexpr double VALUE_FACTOR = 0.9;
 
-		Beat(int bin, int area);
+		Bar(int bin, int area);
+		Bar(const Beat&);
 
-		bool willAccept(int bin);
+		int willAccept(int bin) const;
 		void add(int bin);
 
 		bool update(const std::vector<double>& spectrum);
 
-		std::vector<int> bins;
+		std::vector<Beat> cull();
+
+		std::vector<Beat> beats;
 		size_t aliveTime, addTime;
 		double value, valueMultiplier;
 		int area;
@@ -43,7 +52,7 @@ private:
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
 	std::vector<double> smoothed;
 	std::vector<double> delta;
-	std::vector<Beat> beats;
+	std::vector<Bar> bars;
 	std::vector<int> areas;
 	double avgEnergy;
 };

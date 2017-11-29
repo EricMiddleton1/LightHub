@@ -16,7 +16,9 @@ private:
 	virtual void tick() override;
 	virtual void updateLight(std::shared_ptr<Light>& light) override;
 
+	void smoothSpectrum(std::vector<double>& out, double& avg, const Spectrum& spectrum);
+
 	std::shared_ptr<SpectrumAnalyzer> spectrumAnalyzer;
-	std::vector<double> smoothed;
-	double avgEnergy;
+	std::vector<double> leftSmoothed, rightSmoothed, monoSmoothed;
+	double leftAvg, rightAvg, monoAvg;
 };

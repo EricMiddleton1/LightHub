@@ -57,8 +57,10 @@ public:
 	size_t getBinCount() const;
 
 	FrequencyBin& get(double frequency);
+	const FrequencyBin& get(double frequency) const;
 
 	FrequencyBin& getByIndex(size_t index);
+	const FrequencyBin& getByIndex(size_t index) const;
 	FrequencyBin getByIndexConst(size_t index) const;
 
 

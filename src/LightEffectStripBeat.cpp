@@ -50,21 +50,25 @@ void LightEffectStripBeat::tick() {
 		delta[i] = top - smoothed[i];
 
 		if(delta[i] > threshold) {
-			bool added = false;
-			for(auto& beat : beats) {
-				if(beat.willAccept(i)) {
-					added = true;
-					beat.add(i);
+			int bestMatch = -1, bestMatchIndex;
+			for(int j = 0; j < bars.size(); ++j) {
+				int match = bars[j].willAccept(i);
+				if(match > bestMatch) {
+					bestMatch = match;
+					bestMatchIndex = j;
 				}
 			}
-
-			if(!added) {
+			
+			if(bestMatch > -1) {
+				bars[bestMatchIndex].add(i);
+			}
+			else {
 				if(areas.empty()) {
-					areas.push_back(beats[0].area);
-					beats.erase(beats.begin());
+					areas.push_back(bars[0].area);
+					bars.erase(bars.begin());
 				}
 
-				beats.emplace_back(i, areas[0]);
+				bars.emplace_back(i, areas[0]);
 				areas.erase(areas.begin());
 			}
 		}
@@ -73,10 +77,10 @@ void LightEffectStripBeat::tick() {
 		smoothed[i] = top*0.5 + smoothed[i]*0.5;
 	}
 
-	for(int i = 0; i < beats.size(); ++i) {
-		if(!beats[i].update(smoothed)) {
-			areas.push_back(beats[i].area);
-			beats.erase(beats.begin()+i);
+	for(int i = 0; i < bars.size(); ++i) {
+		if(!bars[i].update(smoothed)) {
+			areas.push_back(bars[i].area);
+			bars.erase(bars.begin()+i);
 			--i;
 		}
 	}
@@ -94,11 +98,11 @@ void LightEffectStripBeat::updateLight(std::shared_ptr<Light>& light) {
 	size_t ledCount = buffer.getSize(),
 		binCount = smoothed.size();
 	
-	for(auto& beat : beats) {
-		int start = beat.bins[0], end = beat.bins[beat.bins.size()-1];
+	for(auto& bar : bars) {
+		int start = bar.beats[0].bin, end = bar.beats[bar.beats.size()-1].bin;
 
 		float h = 255.f*(start+end)/2*240./(binCount-1)/360.f, s = 255.f,
-			v = 255.f*beat.value;
+			v = 255.f*bar.value;
 
 		if(v < 0) {
 			v = 0;
@@ -109,8 +113,8 @@ void LightEffectStripBeat::updateLight(std::shared_ptr<Light>& light) {
 
 		Color c = Color::HSV(h, s, v);
 
-		size_t ledStart = beat.area*ledCount/AREA_COUNT,
-			ledEnd = (beat.area+1)*ledCount/AREA_COUNT - 1;
+		size_t ledStart = bar.area*ledCount/AREA_COUNT,
+			ledEnd = (bar.area+1)*ledCount/AREA_COUNT - 1;
 		for(size_t j = ledStart; j < ledEnd; ++j) {
 			unsigned int x = reverse ? (ledCount - j - 1) : j;
 			buffer[x] = c;
@@ -118,8 +122,8 @@ void LightEffectStripBeat::updateLight(std::shared_ptr<Light>& light) {
 	}
 }
 
-LightEffectStripBeat::Beat::Beat(int bin, int _area)
-	:	bins{{bin}}
+LightEffectStripBeat::Bar::Bar(int bin, int _area)
+	:	beats{{{bin, 0}}}
 	,	aliveTime{0}
 	,	addTime{0}
 	,	value{0.}
@@ -127,26 +131,41 @@ LightEffectStripBeat::Beat::Beat(int bin, int _area)
 	,	area{_area} {
 }
 
-bool LightEffectStripBeat::Beat::willAccept(int other) {
-	int range = (aliveTime >= MERGE_TIMEOUT) ? 0 : 2;
+int LightEffectStripBeat::Bar::willAccept(int other) const {
+	int bestMatch = MERGE_RANGE + 1;
 
-	for(const auto& bin : bins) {
-		if(std::abs(bin - other) <= range)
-			return true;
+	for(const auto& beat : beats) {
+		int range = ((aliveTime - beat.startTime) >= MERGE_TIMEOUT) ? 0 : MERGE_RANGE;
+		int dist = std::abs(beat.bin - other);
+
+		if((dist <= range) && (dist < bestMatch)) {
+			bestMatch = dist;
+		}
 	}
 
-	return false;
+	return MERGE_RANGE - bestMatch;
 }
 
-void LightEffectStripBeat::Beat::add(int bin) {
-	bins.push_back(bin);
-	std::sort(bins.begin(), bins.end());
+void LightEffectStripBeat::Bar::add(int bin) {
+	auto found = std::find_if(beats.begin(), beats.end(), [&bin](const auto& beat) {
+		return bin == beat.bin;
+	});
+
+	if(found != beats.end()) {
+		found->startTime = aliveTime;
+	}
+	else {
+		beats.push_back({bin, aliveTime});
+		std::sort(beats.begin(), beats.end(), [](const auto& b1, const auto& b2) {
+			return b1.bin <= b2.bin;
+		});
+	}
 
 	addTime = aliveTime;
 	valueMultiplier = 1.;
 }
 
-bool LightEffectStripBeat::Beat::update(const std::vector<double>& spectrum) {
+bool LightEffectStripBeat::Bar::update(const std::vector<double>& spectrum) {
 	double sum = 0., max = 0.;
 
 	aliveTime++;
@@ -154,11 +173,22 @@ bool LightEffectStripBeat::Beat::update(const std::vector<double>& spectrum) {
 		return false;
 	}
 
-	for(const auto& bin : bins) {
-		sum += spectrum[bin];
+	for(int i = 0; i < beats.size(); ++i) {
+		if((aliveTime - beats[i].startTime) > ACTIVITY_TIMEOUT) {
+			beats.erase(beats.begin() + i);
+			--i;
+		}
 	}
 
-	value = std::min(1., sum / bins.size());
+	if(beats.empty()) {
+		return false;
+	}
+
+	for(const auto& beat : beats) {
+		sum += spectrum[beat.bin];
+	}
+
+	value = std::min(1., sum / beats.size());
 
 	valueMultiplier *= VALUE_FACTOR;
 	value *= valueMultiplier;
