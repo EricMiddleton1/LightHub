@@ -6,7 +6,8 @@
 
 LightEffectStripEQ::LightEffectStripEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
-	:	LightEffect{{{"reverse", false}, {"smooth", false}, {"stereo", false}}}
+	:	LightEffect{{{"reverse", false}, {"smooth", false}, {"stereo", false},
+			{"multiplier", 1.4}}}
 	,	spectrumAnalyzer(_spectrumAnalyzer)
 	,	leftSmoothed(spectrumAnalyzer->getLeftSpectrum().getBinCount())
 	,	rightSmoothed(spectrumAnalyzer->getLeftSpectrum().getBinCount())
@@ -30,6 +31,8 @@ void LightEffectStripEQ::smoothSpectrum(std::vector<double>& smoothed, double& a
 	const Spectrum& spec) {
 	
 	const double NOISE_FLOOR = 50.;
+	
+	double multiplier = getParameter("multiplier").getValue().getDouble();
 
 	size_t binCount = spec.getBinCount();
 
@@ -42,7 +45,7 @@ void LightEffectStripEQ::smoothSpectrum(std::vector<double>& smoothed, double& a
 		}
 
 		//Convert to range [0,1]
-		double top = 1.4*(db / NOISE_FLOOR);
+		double top = multiplier*(db / NOISE_FLOOR);
 		if(top > 1.)
 			top = 1.;
 
@@ -65,6 +68,7 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 	bool reverse = getParameter("reverse").getValue().getBool();
 	bool smooth = getParameter("smooth").getValue().getBool();
 	bool stereo = getParameter("stereo").getValue().getBool();
+
 	
 	auto buffer = light->getBuffer();
 

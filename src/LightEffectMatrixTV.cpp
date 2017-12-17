@@ -25,7 +25,8 @@ void LightEffectMatrixTV::updateLight(std::shared_ptr<Light>& light) {
 	
 	for(int j = 0; j < mHeight; ++j) {
 		for(int i = 0; i < mWidth; ++i) {
-			buffer[mWidth*j + i] = 
+			auto x = (j % 2) ? mWidth - i - 1 : i;
+			buffer[mWidth*j + x] = 
 				display->getAverageColor(i*dispWidth/mWidth, j*dispHeight/mHeight,
 					(i+1)*dispWidth/mWidth, (j+1)*dispHeight/mHeight);
 		}
