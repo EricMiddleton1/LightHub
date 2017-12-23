@@ -16,7 +16,7 @@ class Rhopalia;
 class LightEffect : public ConfigurableObject
 {
 public:
-	LightEffect(const std::vector<Parameter>& parameters);
+	LightEffect(const std::vector<Parameter>& parameters, bool requireMatrix = false);
 	virtual ~LightEffect();
 
 	bool addLight(std::shared_ptr<Light>&);
@@ -31,10 +31,11 @@ protected:
 
 private:
 	friend class Rhopalia;
-
 	
 	void update();
 
 	std::unordered_map<std::string, std::weak_ptr<Light>> lights;
 	mutable std::mutex lightMutex;
+
+	bool requireMatrix;
 };

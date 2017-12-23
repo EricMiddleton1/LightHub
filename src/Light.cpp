@@ -44,6 +44,24 @@ const Color& LightBuffer::operator[](int index) const {
 	return light.pixelBuffer[index];
 }
 
+Color& LightBuffer::at(int index) {
+	if( (index >= light.pixels.size()) || (index < 0) ) {
+		throw runtime_error(string("LightBuffer::operator[]: Invalid index: ")
+			+ to_string(index));
+	}
+
+	return light.pixelBuffer[index];
+}
+
+const Color& LightBuffer::at(int index) const {
+	if( (index >= light.pixels.size()) || (index < 0) ) {
+		throw runtime_error(string("LightBuffer::operator[]: Invalid index: ")
+			+ to_string(index));
+	}
+
+	return light.pixelBuffer[index];
+}
+
 void LightBuffer::setAll(const Color& c) {
 	for(auto& pixel : light.pixelBuffer) {
 		pixel = c;
@@ -67,6 +85,9 @@ Light::Light(LightHub& _hub, LightNode& _node, const boost::asio::ip::address& _
 	,	transitionPeriodsBuffer{0, 0, 0}
 	,	pixels{_size}
 	,	pixelBuffer{_size} {
+}
+
+Light::~Light() {
 }
 
 boost::asio::ip::address Light::getAddress() const {
@@ -111,6 +132,6 @@ void Light::update() {
 	hub.update(*this);
 }
 
-LightBuffer Light::getBuffer() {
-	return {*this};
+std::unique_ptr<LightBuffer> Light::getBuffer() {
+	return std::make_unique<LightBuffer>(*this);
 }

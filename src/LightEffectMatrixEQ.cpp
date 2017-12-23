@@ -4,12 +4,14 @@
 #include <iostream>
 #include <algorithm>
 
+#include "Matrix.hpp"
+
 LightEffectMatrixEQ::LightEffectMatrixEQ(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
-	:	LightEffect({{"width", 2}, {"height", 2}, {"invert", false}, {"multiplier", 1.1},
-			{"interleave", false}, {"band count",
+	:	LightEffect({{"invert", false}, {"multiplier", 1.1}, {"band count",
 			(double)_spectrumAnalyzer->getLeftSpectrum().getBinCount(),
-			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}})
+			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}},
+			true)
 	,	spectrumAnalyzer(_spectrumAnalyzer)
 	,	heights(getParameter("band count").getValue().getDouble()) {
 	
@@ -19,8 +21,7 @@ LightEffectMatrixEQ::~LightEffectMatrixEQ() {
 }
 
 bool LightEffectMatrixEQ::validateLight(const std::shared_ptr<Light>& light) {
-	return light->getSize() ==
-		(getParameter("width").getValue().getInt() * getParameter("height").getValue().getInt());
+	return true;
 }
 
 void LightEffectMatrixEQ::tick() {
@@ -79,18 +80,19 @@ void LightEffectMatrixEQ::tick() {
 }
 
 void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
-	auto matrixWidth = getParameter("width").getValue().getInt();
-	auto matrixHeight = getParameter("height").getValue().getInt();
-	auto interleave = getParameter("interleave").getValue().getBool();
+	auto matrix = std::dynamic_pointer_cast<Matrix>(light);
 
-	auto buffer = light->getBuffer();
+	auto matrixWidth = matrix->getWidth();
+	auto matrixHeight = matrix->getHeight();
+	auto invert = getParameter("invert").getValue().getBool();
+
+	auto buffer = buffer_cast<MatrixBuffer>(matrix->getBuffer());
 	
-	buffer.setAll({});
+	buffer->setAll({});
 
 	std::vector<double> bars;
 
 	unsigned int bandCount = heights.size();
-	bool invert = getParameter("invert").getValue().getBool();
 
 	unsigned int width = 1, gap = 0, start = 0;
 	if(matrixWidth >= (2*bandCount - 1)) {
@@ -137,11 +139,10 @@ void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 
 			for(unsigned int y = 0; y <= top; ++y) {
 				unsigned int yPos = (invert) ? (y) : (matrixHeight - y - 1);
-				unsigned int xPos = (interleave && !(y & 0x01)) ? (matrixWidth - x - 1) : x;
 
 				double value = (y == top) ? frac : 1.;
 
-				buffer[yPos*matrixWidth + xPos] = Color::HSV(hue*255.f/360.f, 255, 255.f*value);
+				buffer->set(x, yPos, Color::HSV(hue*255.f/360.f, 255, 255.f*value));
 				//buffer->setColor(x, yPos,
 					//Color::HSV(hue, 1.f, std::pow(1.f - 1.0f*y / top, 1.0)));
 			}

@@ -1,9 +1,12 @@
 #include "LightHub.hpp"
 
 #include "Packet.hpp"
+#include "Matrix.hpp"
 
 using namespace std;
 using namespace boost::asio;
+
+const int LightHub::LIGHT_TIMEOUT = 4;
 
 std::string toString(const std::vector<uint8_t>& data) {
 	std::string str("{");
@@ -28,7 +31,7 @@ LightHub::LightHub(uint16_t _port, uint32_t _discoveryPeriod)
 	,	socket(ioService, ip::udp::v4())
 	,	port{_port}
 	,	discoveryTimer(ioService, std::chrono::milliseconds(_discoveryPeriod),
-		[this](){ discover(); })	{
+		[this](){ handleDiscoveryTimer(); })	{
 
 	socket.set_option(socket_base::broadcast(true));
 	socket.set_option(socket_base::reuse_address(true));
@@ -110,14 +113,15 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 	}
 	else {
 		try {
-			Packet p{vector<uint8_t>{readBuffer.begin(), readBuffer.begin() + bytesTransferred}};
+			Packet p{vector<uint8_t>{readBuffer.begin(), readBuffer.begin() +
+				bytesTransferred}};
 			auto data = p.data();
 
 			switch(p.getID()) {
 				case Packet::ID::NodeInfoResponse: {
 					if(data.size() < 1) {
-						cerr << "[Error] LightHub::handleReceive: Invalid payload size for NodeInfoResponse: "
-							<< data.size() << endl;
+						cerr << "[Error] LightHub::handleReceive: Invalid payload size for "
+							"NodeInfoResponse: " << data.size() << endl;
 					}
 					else {
 						string name{data.begin()+1, data.end()};
@@ -136,17 +140,18 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 				case Packet::ID::LightInfoResponse: {
 					auto node = nodes.find(receiveEndpoint.address());
 					if(node == nodes.end()) {
-						cerr << "[Info] LightHub::handleReceive: Received LightInfoResponse from node not "
-							"in map" << endl;
+						cerr << "[Info] LightHub::handleReceive: Received LightInfoResponse from "
+						"node not in map" << endl;
 					}
 					else {
-						if(p.data().size() < 2) {
+						if(p.data().size() < 4) {
 							cerr << "[Error] LightHub::handleReceive: Invalid payload size for "
 								"LightInfoResponse: " << p.data().size() << endl;
 						}
 						else {
 							auto ledCount = Packet::parse16(p.data().begin());
-							string name{data.begin()+2, data.end()};
+							int type = data[0];
+							string name{data.begin()+3, data.end()};
 
 							auto light = find_if(node->second.lights.begin(), node->second.lights.end(),
 								[&name](const std::shared_ptr<Light>& light) {
@@ -154,17 +159,41 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 								});
 
 							if(light == node->second.lights.end()) {
-								node->second.lights.emplace_back(make_shared<Light>(*this, node->second,
-									receiveEndpoint.address(), p.getLightID(), name, ledCount));
+								if(type == 0) {
+									node->second.lights.emplace_back(make_shared<Light>(*this,
+										node->second, receiveEndpoint.address(), p.getLightID(), name,
+										Packet::parse16(data.begin()+1)));
+								}
+								else {
+									node->second.lights.emplace_back(make_shared<Matrix>(*this,
+										node->second, receiveEndpoint.address(), p.getLightID(), name,
+										data[1], data[2]));
+								}
+								node->second.timeouts.push_back(LIGHT_TIMEOUT);
 
 								sigLightDiscover(node->second.lights.back());
 							}
-							else if((*light)->getSize() != ledCount) {
-								node->second.lights.erase(light);
+							else {
+								auto matrix = dynamic_pointer_cast<Matrix>(*light);
+								int existingType = !!matrix;
 
-								cout << "[Info] LightHub::handleReceive: Previously connected light "
-									<< node->second.name << "/" << name << " has changed LED count"
-									<< endl;
+								if( (existingType != type) ||
+									(type == 0 && (*light)->getSize() != Packet::parse16(data.begin()+1)) ||
+									(type == 1 && ( matrix->getWidth() != data[1] ||
+										matrix->getHeight() != data[2] ) ) ) {
+								
+									node->second.timeouts.erase(node->second.timeouts.begin() +
+										(light - node->second.lights.begin()));
+									node->second.lights.erase(light);
+
+									cout << "[Info] LightHub::handleReceive: Previously connected light "
+										<< node->second.name << "/" << name << " has changed LED count"
+										<< endl;
+								}
+								else {
+									node->second.timeouts[light - node->second.lights.begin()] =
+										LIGHT_TIMEOUT;
+								}
 							}
 						}
 					}
@@ -190,4 +219,24 @@ void LightHub::update(Light& light) {
 		Packet::UpdateColor(light.getLightID(),
 			light.getHuePeriod(), light.getSatPeriod(), light.getValPeriod(),
 			light.getPixels()).asDatagram());
+}
+
+void LightHub::handleDiscoveryTimer() {
+	for(auto& nodeEntry : nodes) {
+		auto& node = nodeEntry.second;
+
+		for(int i = 0; i < node.timeouts.size(); ++i) {
+			if(--node.timeouts[i] == 0) {
+				cout << "[Info] LightHub: Light "
+					<< node.name << "/" << node.lights[i]->getName() << " has timed out"
+					<< endl;
+
+				node.lights.erase(node.lights.begin() + i);
+				node.timeouts.erase(node.timeouts.begin() + i);
+				--i;
+			}
+		}
+	}
+
+	discover();
 }

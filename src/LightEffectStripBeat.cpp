@@ -93,9 +93,9 @@ void LightEffectStripBeat::updateLight(std::shared_ptr<Light>& light) {
 	bool reverse = getParameter("reverse").getValue().getBool();
 	
 	auto buffer = light->getBuffer();
-	buffer.setAll({});
+	buffer->setAll({});
 
-	size_t ledCount = buffer.getSize(),
+	size_t ledCount = buffer->getSize(),
 		binCount = smoothed.size();
 	
 	for(auto& bar : bars) {
@@ -117,7 +117,7 @@ void LightEffectStripBeat::updateLight(std::shared_ptr<Light>& light) {
 			ledEnd = (bar.area+1)*ledCount/AREA_COUNT - 1;
 		for(size_t j = ledStart; j < ledEnd; ++j) {
 			unsigned int x = reverse ? (ledCount - j - 1) : j;
-			buffer[x] = c;
+			buffer->at(x) = c;
 		}
 	}
 }

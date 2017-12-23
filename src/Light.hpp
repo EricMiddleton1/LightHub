@@ -21,6 +21,7 @@ class Light
 public:
 	Light(LightHub&, LightNode&, const boost::asio::ip::address& address, uint8_t lightID,
 		const std::string& name, int size);
+	virtual ~Light();
 
 	boost::asio::ip::address getAddress() const;
 
@@ -35,9 +36,9 @@ public:
 	uint8_t getSatPeriod() const;
 	uint8_t getValPeriod() const;
 
-	LightBuffer getBuffer();
+	virtual std::unique_ptr<LightBuffer> getBuffer();
 
-private:
+protected:
 	friend class LightBuffer;
 
 	void update();
@@ -66,10 +67,13 @@ public:
 	Color& operator[](int index);
 	const Color& operator[](int index) const;
 
+	Color& at(int index);
+	const Color& at(int index) const;
+
 	void setAll(const Color& c);
 
 	void setTransitionPeriod(const std::tuple<uint8_t, uint8_t, uint8_t>& periods);
 
-private:
+protected:
 	Light& light;
 };

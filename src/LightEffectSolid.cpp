@@ -13,5 +13,5 @@ void LightEffectSolid::tick() {
 }
 
 void LightEffectSolid::updateLight(std::shared_ptr<Light>& light) {
-	light->getBuffer().setAll(getParameter("color").getValue().getColor());
+	light->getBuffer()->setAll(getParameter("color").getValue().getColor());
 }

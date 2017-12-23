@@ -48,15 +48,15 @@ void LightEffectDigitalTV::updateLight(std::shared_ptr<Light>& light) {
 	int stripWidth = getParameter("width").getValue().getInt();
 	int stripHeight = getParameter("height").getValue().getInt();
 
-	if(buffer.getSize() != (2*stripWidth + 2*stripHeight)) {
+	if(buffer->getSize() != (2*stripWidth + 2*stripHeight)) {
 		std::cout << "[Error] LightBufferDigitalTV::update: Invalid strip size ("
 			<< "expected " << (2*stripWidth+2*stripHeight) << ", was actually "
-			<< buffer.getSize() << ")" << std::endl;
+			<< buffer->getSize() << ")" << std::endl;
 
 		return;
 	}
 	
-	for(int i = 0; i < buffer.getSize(); ++i) {
-		buffer[i] = edge[i];
+	for(int i = 0; i < buffer->getSize(); ++i) {
+		buffer->at(i) = edge[i];
 	}
 }

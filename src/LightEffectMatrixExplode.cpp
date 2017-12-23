@@ -4,6 +4,8 @@
 #include <iostream>
 #include <algorithm>
 
+#include "Matrix.hpp"
+
 LightEffectMatrixExplode::LightEffectMatrixExplode(
 	std::shared_ptr<SpectrumAnalyzer> _spectrumAnalyzer)
 	:	LightEffect({{"bass freq", 150.}, {"trebble freq", 4000.}, {"bass boost", 12.},
@@ -12,8 +14,7 @@ LightEffectMatrixExplode::LightEffectMatrixExplode(
 			{"change factor", 0.},
 			{"noise floor", 50.}, {"average filter strength", 0.4}, {"min saturation", 0.6},
 			{"color filter strength", 0.8}, {"threshold", 0.},
-			{"width", 2}, {"height", 2}, {"invert", false}, {"multiplier", 1.1},
-			{"interleave", false}, {"band count",
+			{"invert", false}, {"multiplier", 1.1}, {"band count",
 			(double)_spectrumAnalyzer->getLeftSpectrum().getBinCount(),
 			Parameter::ValidatorRange(1., _spectrumAnalyzer->getLeftSpectrum().getBinCount())}})
 	,	spectrumAnalyzer(_spectrumAnalyzer)
@@ -25,16 +26,13 @@ LightEffectMatrixExplode::~LightEffectMatrixExplode() {
 }
 
 bool LightEffectMatrixExplode::validateLight(const std::shared_ptr<Light>& light) {
-	return light->getSize() ==
-		(getParameter("width").getValue().getInt() * getParameter("height").getValue().getInt());
+	return true;
 }
 
 void LightEffectMatrixExplode::tick() {
 	static int tick = 0;
 
-	auto width = getParameter("width").getValue().getInt() / 2 + 1;
-	auto height = getParameter("height").getValue().getInt() / 2 + 1;
-	double maxRadius = std::sqrt(width*width + height*height);
+	double maxRadius = std::sqrt(32*32 + 24*24);
 
 	if(tick == 0) {
 		Spectrum spec = spectrumAnalyzer->getMonoSpectrum();
@@ -49,15 +47,14 @@ void LightEffectMatrixExplode::tick() {
 }
 
 void LightEffectMatrixExplode::updateLight(std::shared_ptr<Light>& light) {
-	auto matrixWidth = getParameter("width").getValue().getInt();
-	auto matrixHeight = getParameter("height").getValue().getInt();
-	auto interleave = getParameter("interleave").getValue().getBool();
 	auto multiplier = getParameter("multiplier").getValue().getDouble();
 	bool invert = getParameter("invert").getValue().getBool();
 
-	auto buffer = light->getBuffer();
+	auto buffer = buffer_cast<MatrixBuffer>(light->getBuffer());
+	auto matrixWidth = buffer->getWidth();
+	auto matrixHeight = buffer->getHeight();
 	
-	buffer.setAll({});
+	buffer->setAll({});
 	
 	int midX = matrixWidth/2, midY = matrixHeight/2;
 
@@ -70,8 +67,7 @@ void LightEffectMatrixExplode::updateLight(std::shared_ptr<Light>& light) {
 			int bin = r;
 
 			if(bin < colors.size()) {
-				int matX = (interleave && !(y & 0x01)) ? (matrixWidth - x - 1) : x;
-				buffer[y*matrixWidth + matX] = colors[bin];
+				buffer->set(x, y, colors[bin]);
 			}
 		}
 	}

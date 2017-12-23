@@ -42,8 +42,8 @@ void LightEffectSoundSolid::tick() {
 void LightEffectSoundSolid::updateLight(std::shared_ptr<Light>& light) {
 	auto buffer = light->getBuffer();
 	
-	buffer.setAll(c);
-	buffer.setTransitionPeriod({5, 10, 10});
+	buffer->setAll(c);
+	buffer->setTransitionPeriod({5, 10, 10});
 }
 
 void LightEffectSoundSolid::renderColor(Spectrum spectrum) {

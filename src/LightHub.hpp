@@ -21,6 +21,7 @@ struct LightNode {
 
 	std::string name;
 	std::vector<std::shared_ptr<Light>> lights;
+	std::vector<int> timeouts;
 };
 
 
@@ -53,6 +54,8 @@ public:
 	size_t getNodeCount() const;
 
 private:
+	static const int LIGHT_TIMEOUT;
+
 	friend class Rhopalia;
 	friend class Light;
 
@@ -74,7 +77,7 @@ private:
 		size_t bytesTransferred);
 
 	//Callback for discovery timer
-	void handleDiscoveryTimer(const boost::system::error_code&);
+	void handleDiscoveryTimer();
 
 	//Signals
 	boost::signals2::signal<void(std::shared_ptr<Light>)> sigLightDiscover;

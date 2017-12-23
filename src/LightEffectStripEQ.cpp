@@ -72,7 +72,7 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 	
 	auto buffer = light->getBuffer();
 
-	size_t ledCount = buffer.getSize(),
+	size_t ledCount = buffer->getSize(),
 		binCount = leftSmoothed.size();
 	
 	if(smooth) {
@@ -100,7 +100,7 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 
 				Color c = Color::HSV(255.f*hue, 255, 255.f*v);
 				//c.gammaCorrect(2.2);
-				buffer[ledIndex] = c;
+				buffer->at(ledIndex) = c;
 			}
 			for(size_t i = 0; i < ledCount/2; ++i) {
 				float bin = static_cast<float>(i)*binCount / (ledCount/2);
@@ -125,7 +125,7 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 
 				Color c = Color::HSV(255.f*hue, 255, 255.f*v);
 				//c.gammaCorrect(2.2);
-				buffer[ledIndex] = c;
+				buffer->at(ledIndex) = c;
 			}
 		}
 		else {
@@ -152,7 +152,7 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 
 				Color c = Color::HSV(255.f*hue, 255, 255.f*v);
 				//c.gammaCorrect(2.2);
-				buffer[ledIndex] = c;
+				buffer->at(ledIndex) = c;
 			}
 		}
 	}
@@ -174,7 +174,7 @@ void LightEffectStripEQ::updateLight(std::shared_ptr<Light>& light) {
 				ledEnd = (i+1)*ledCount/binCount;
 			for(size_t j = ledStart; j < ledEnd; ++j) {
 				unsigned int x = reverse ? (ledCount - j - 1) : j;
-				buffer[x] = c;
+				buffer->at(x) = c;
 			}
 		}
 	}

@@ -17,6 +17,6 @@ void LightEffectFade::tick() {
 
 void LightEffectFade::updateLight(std::shared_ptr<Light>& light) {
 	auto buffer = light->getBuffer();
-	buffer.setAll(Color::HSV(hue*255.f/360.f, 255,
+	buffer->setAll(Color::HSV(hue*255.f/360.f, 255,
 		255*getParameter("brightness").getValue().getDouble()));
 }

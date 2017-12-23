@@ -3,16 +3,23 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include "Matrix.hpp"
+
 using namespace std;
 
-LightEffect::LightEffect(const std::vector<Parameter>& _parameters)
-	:	ConfigurableObject(_parameters) {
+LightEffect::LightEffect(const std::vector<Parameter>& _parameters, bool _requireMatrix)
+	:	ConfigurableObject(_parameters)
+	,	requireMatrix{_requireMatrix} {
 }
 
 LightEffect::~LightEffect() {
 }
 
 bool LightEffect::addLight(std::shared_ptr<Light>& light) {
+	if(requireMatrix && !Matrix::isMatrix(light)) {
+		return false;
+	}
+	
 	std::unique_lock<std::mutex> lightLock(lightMutex);
 
 	if(validateLight(light)) {
@@ -21,6 +28,8 @@ bool LightEffect::addLight(std::shared_ptr<Light>& light) {
 		if(lights.find(fullName) != lights.end()) {
 			cerr << "[Error] LightEffect::addLight: Light '" << fullName << "' already added"
 				<< endl;
+
+			return false;
 		}
 		else {
 			lights.emplace(fullName, light);
