@@ -18,13 +18,15 @@ using namespace std;
 
 int main() {
 	std::shared_ptr<LightEffect> matrixEQ, matrixCircEQ, soundSolid, stripEQ,
-		stripSmoothEQ, matrixTV, matrixExplode, matrixCircSpec, visualizer;
+		stripSmoothEQ, matrixTV, matrixExplode, matrixCircSpec, visualizer, testEffect;
 
 	auto audioDevice = make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
 	auto spectrumAnalyzer = make_shared<SpectrumAnalyzer>(audioDevice, 32.7032, 16744.0384, 3, 4096);
 
 	//auto display = std::make_shared<Display>();
 	//matrixTV = make_shared<LightEffectMatrixTV>(display);
+
+	testEffect = make_shared<LightEffectFade>();
 	
 	matrixEQ = make_shared<LightEffectMatrixEQ>(spectrumAnalyzer);
 	matrixEQ->setParameter("width", 32);
@@ -76,7 +78,7 @@ int main() {
 	Rhopalia rhopalia;
 	rhopalia.addListener(LightHub::ListenerType::LightDiscover,
 	[&matrixEQ, &matrixCircEQ, &soundSolid, &stripEQ, &stripSmoothEQ, &matrixTV,
-		&matrixExplode, &matrixCircSpec, &visualizer]
+		&matrixExplode, &matrixCircSpec, &visualizer, &testEffect]
 		(std::shared_ptr<Light> light) {
 		std::cout << "[Info] Light discovered: " << light->getName()
 			<< " with " << light->getSize() << " LEDs" << std::endl;
@@ -88,6 +90,9 @@ int main() {
 			else {
 				std::cout << "\tFailed to add light to effect\n" << std::endl;
 			}
+		}
+		else if(light->getName() == "Test" && stripEQ->addLight(light)) {
+			std::cout << "\tLight added to effect 'Test Effect'\n" << std::endl;
 		}
 		else if(matrixEQ->addLight(light)) {
 			std::cout << "\tLight added to effect 'Matrix EQ'\n" << std::endl;
@@ -114,6 +119,7 @@ int main() {
 	rhopalia.addEffect(matrixExplode);
 	rhopalia.addEffect(matrixCircSpec);
 	rhopalia.addEffect(visualizer);
+	rhopalia.addEffect(testEffect);
 
 	audioDevice->startStream();
 
