@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "font5x7.h"
+
 Matrix::Matrix(LightHub& hub, LightNode& node, const boost::asio::ip::address& addr,
 	uint8_t lightID, const std::string& name, uint8_t _width, uint8_t _height)
 	:	Light(hub, node, addr, lightID, name, _width*_height)
@@ -60,4 +62,38 @@ void MatrixBuffer::set(uint8_t x, uint8_t y, const Color& c) {
 	}
 
 	at(y*width + x) = c;
+}
+
+void MatrixBuffer::drawText(int x, int y, int offset, const Color& c,
+	const std::string& str) {
+	
+	auto width = getWidth(), height = getHeight();
+
+	const int CHAR_WIDTH = 5;
+	const int CHAR_HEIGHT = 7;
+
+	if(x < 0 || x >= width || y < 0 || y >= height) {
+		std::cerr << "[Error] MatrixBuffer::drawText: Invalid coordinate" << std::endl;
+		return;
+	}
+
+	int xPos = x, yPos = y;
+	int strOffset = offset/(CHAR_WIDTH+1),
+		chrOffset = offset % (CHAR_WIDTH+1);
+
+	for(int i = strOffset; i < str.length(); ++i) {
+		int fontIndex = CHAR_WIDTH*(str[i] - 32);
+
+		for(int j = (i==strOffset)*chrOffset; j < CHAR_WIDTH && xPos < width; ++j) {
+			unsigned char line = Font5x7[fontIndex + j];
+
+			for(int pix = 0; pix < CHAR_HEIGHT; ++pix) {
+				if(line & (1 << pix)) {
+					set(xPos, yPos+pix, c);
+				}
+			}
+			xPos++;
+		}
+		xPos++;
+	}
 }

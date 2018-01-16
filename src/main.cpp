@@ -12,12 +12,17 @@
 #include "LightEffectMatrixEQ.hpp"
 #include "LightEffectMatrixTV.hpp"
 #include "LightEffectMatrixExplode.hpp"
+#include "LightEffectMatrixText.hpp"
+#include "LightEffectMatrixClock.hpp"
+#include "LightEffectMatrixCircSpec.hpp"
+#include "LightEffectMatrixCircEQ.hpp"
 
 using namespace std;
 
 int main() {
 	std::shared_ptr<LightEffect> matrixEQ, matrixCircEQ, soundSolid, stripEQ,
-		stripSmoothEQ, matrixTV, matrixExplode, matrixCircSpec, visualizer, testEffect, fade;
+		stripSmoothEQ, matrixTV, matrixExplode, matrixCircSpec, visualizer, matrixText, fade,
+		matrixClock;
 
 	auto audioDevice = make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
 	auto spectrumAnalyzer = make_shared<SpectrumAnalyzer>(audioDevice, 32.7032,
@@ -41,36 +46,33 @@ int main() {
 	matrixExplode = make_shared<LightEffectMatrixExplode>(spectrumAnalyzer);
 	matrixExplode->setParameter("color filter strength", 0.5);
 
+	matrixText = make_shared<LightEffectMatrixText>();
+	matrixText->setParameter("text", "Merry Christmas!"s);
+	matrixText->setParameter("color", Color(0, 64, 0));
+	matrixText->setParameter("speed", 15.);
+
+	matrixClock = make_shared<LightEffectMatrixClock>();
+	matrixClock->setParameter("color", Color(0, 0, 64));
+
+	matrixCircSpec = make_shared<LightEffectMatrixCircSpec>(spectrumAnalyzer);
+	matrixCircSpec->setParameter("band count", 6.);
+	matrixCircSpec->setParameter("multiplier", 1.);
+
+	matrixCircEQ = make_shared<LightEffectMatrixCircEQ>(spectrumAnalyzer);
+	matrixCircEQ->setParameter("band count", 4.);
+	matrixCircEQ->setParameter("multiplier", 1.5);
+
 /*
 	auto display = std::make_shared<Display>();
 	matrixTV = make_shared<LightEffectMatrixTV>(display);
 	
-	matrixCircEQ = make_shared<LightEffectMatrixCircEQ>(spectrumAnalyzer);
-	matrixCircEQ->setParameter("width", 32);
-	matrixCircEQ->setParameter("height", 24);
-	matrixCircEQ->setParameter("band count", 6.);
-	matrixCircEQ->setParameter("multiplier", 1.5);
-	matrixCircEQ->setParameter("interleave", true);
-	
-	matrixCircSpec = make_shared<LightEffectMatrixCircSpec>(spectrumAnalyzer);
-	matrixCircSpec->setParameter("width", 32);
-	matrixCircSpec->setParameter("height", 24);
-	matrixCircSpec->setParameter("band count", 6.);
-	matrixCircSpec->setParameter("multiplier", 1.);
-	matrixCircSpec->setParameter("interleave", true);
-
-	visualizer = make_shared<LightEffectMatrixCircEQ>(spectrumAnalyzer);
-	visualizer->setParameter("width", 128);
-	visualizer->setParameter("height", 72);
-	visualizer->setParameter("interleave", true);
-	visualizer->setParameter("band count", 6.);
 */
 
 
 	Rhopalia rhopalia;
 	rhopalia.addListener(LightHub::ListenerType::LightDiscover,
-	[&soundSolid, &stripEQ, &stripSmoothEQ, &matrixEQ, &matrixExplode, &fade]
-		(std::shared_ptr<Light> light) {
+	[&soundSolid, &stripEQ, &stripSmoothEQ, &matrixEQ, &matrixExplode, &matrixText,
+		&matrixClock, &matrixCircSpec, &matrixCircEQ, &fade] (std::shared_ptr<Light> light) {
 
 		if(Matrix::isMatrix(light)) {
 			auto matrix = dynamic_pointer_cast<Matrix>(light);
@@ -107,9 +109,9 @@ int main() {
 				std::cout << "\tMatrix added to effect 'Matrix EQ'\n" << std::endl;
 			}
 			else {
-				std::cerr << "\tFailed to add matrix to an effect\n" << std::endl;
+				std::cout << "\tFailed to add matrix to effect\n" << std::endl;
 			}
-			*/
+		*/
 		}
 		else {
 			std::cout << "[Info] Light discovered: " << light->getName()
@@ -141,14 +143,9 @@ int main() {
 	rhopalia.addEffect(stripSmoothEQ);
 	rhopalia.addEffect(matrixEQ);
 	rhopalia.addEffect(matrixExplode);
-	rhopalia.addEffect(fade);
-
-/*
-	rhopalia.addEffect(matrixCircEQ);
 	rhopalia.addEffect(matrixCircSpec);
-	rhopalia.addEffect(visualizer);
-	rhopalia.addEffect(testEffect);
-*/
+	rhopalia.addEffect(matrixCircEQ);
+	rhopalia.addEffect(fade);
 
 	audioDevice->startStream();
 

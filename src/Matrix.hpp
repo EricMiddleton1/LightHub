@@ -33,6 +33,8 @@ public:
 
 	Color get(uint8_t x, uint8_t y) const;
 	void set(uint8_t x, uint8_t y, const Color& c);
+
+	void drawText(int x, int y, int offset, const Color& c, const std::string& str);
 };
 
 template<typename Derived, typename Base, typename Del>
