@@ -17,11 +17,13 @@ using namespace std;
 
 int main() {
 	std::shared_ptr<LightEffect> matrixEQ, matrixCircEQ, soundSolid, stripEQ,
-		stripSmoothEQ, matrixTV, matrixExplode, matrixCircSpec, visualizer, testEffect;
+		stripSmoothEQ, matrixTV, matrixExplode, matrixCircSpec, visualizer, testEffect, fade;
 
 	auto audioDevice = make_shared<AudioDevice>(AudioDevice::DEFAULT_DEVICE, 48000, 1024);
 	auto spectrumAnalyzer = make_shared<SpectrumAnalyzer>(audioDevice, 32.7032,
 		16744.0384, 3, 4096);
+
+	fade = make_shared<LightEffectFade>();
 
 	soundSolid = make_shared<LightEffectSoundSolid>(spectrumAnalyzer);
 	soundSolid->setParameter("color filter strength", 0.5);
@@ -67,7 +69,7 @@ int main() {
 
 	Rhopalia rhopalia;
 	rhopalia.addListener(LightHub::ListenerType::LightDiscover,
-	[&soundSolid, &stripEQ, &stripSmoothEQ, &matrixEQ, &matrixExplode]
+	[&soundSolid, &stripEQ, &stripSmoothEQ, &matrixEQ, &matrixExplode, &fade]
 		(std::shared_ptr<Light> light) {
 
 		if(Matrix::isMatrix(light)) {
@@ -76,11 +78,17 @@ int main() {
 				<< " with " << static_cast<int>(matrix->getWidth()) << "x"
 				<< static_cast<int>(matrix->getHeight()) << " resolution" << std::endl;
 				
-			if(matrixExplode->addLight(light)) {
+			if(light->getName() == "matrix") {
+				matrixEQ->addLight(light);
+				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
+			}
+			else if(light->getName() == "Little Matrix") {
+				matrixExplode->addLight(light);
 				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
 			}
 			else {
-				std::cout << "\tFailed to add matrix to effect\n" << std::endl;
+				matrixExplode->addLight(light);
+				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
 			}
 
 		/*
@@ -113,6 +121,11 @@ int main() {
 			else if(stripSmoothEQ->addLight(light)) {
 				std::cout << "\tLight added to effect 'Strip Beat'\n" << std::endl;
 			}
+/*
+			else if(fade->addLight(light)) {
+				std::cout << "\tLight added to effect 'Fade'\n" << std::endl;
+			}
+*/
 			else if(soundSolid->addLight(light)) {
 				std::cout << "\tLight added to effect 'Sound Solid'\n" << std::endl;
 			}
@@ -128,6 +141,7 @@ int main() {
 	rhopalia.addEffect(stripSmoothEQ);
 	rhopalia.addEffect(matrixEQ);
 	rhopalia.addEffect(matrixExplode);
+	rhopalia.addEffect(fade);
 
 /*
 	rhopalia.addEffect(matrixCircEQ);
