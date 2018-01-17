@@ -48,7 +48,8 @@ Color MatrixBuffer::get(uint8_t x, uint8_t y) const {
 	auto width = getWidth(), height = getHeight();
 
 	if( (x >= width) || (y >= height) ) {
-		throw std::invalid_argument("MatrixBuffer::get: Invalid coordinate");
+		throw std::invalid_argument("MatrixBuffer::get: Invalid coordinate: ("
+			+ std::to_string(x) + ", " + std::to_string(y) + ")");
 	}
 
 	return at(y*width + x);
@@ -58,7 +59,8 @@ void MatrixBuffer::set(uint8_t x, uint8_t y, const Color& c) {
 	auto width = getWidth(), height = getHeight();
 
 	if( (x >= width) || (y >= height) ) {
-		throw std::invalid_argument("MatrixBuffer::get: Invalid coordinate");
+		throw std::invalid_argument("MatrixBuffer::set: Invalid coordinate: ("
+			+ std::to_string(x) + ", " + std::to_string(y) + ")");
 	}
 
 	at(y*width + x) = c;

@@ -107,6 +107,17 @@ void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 
 		width = std::ceil(matrixWidth / (bars.size())) - gap;
 	}
+	else if(matrixWidth < bandCount) {
+		bars.resize(matrixWidth);
+
+		for(int i = 0; i < matrixWidth; ++i) {
+			auto start = i*bandCount/matrixWidth, end = (i+1)*bandCount/matrixWidth;
+			for(int j = start; j < end; ++j) {
+				bars[i] += heights[j];
+			}
+			bars[i] /= (end - start);
+		}
+	}
 	else {
 		bars = heights;
 	}
@@ -125,7 +136,7 @@ void LightEffectMatrixEQ::updateLight(std::shared_ptr<Light>& light) {
 			int top = height;
 			double frac = height - top;
 
-			int yellowPoint = 11;
+			int yellowPoint = 11 * bars.size()/heights.size();
 			
 			float hue;
 			if(i < yellowPoint) {

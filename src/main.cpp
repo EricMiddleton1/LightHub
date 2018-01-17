@@ -47,7 +47,7 @@ int main() {
 	matrixExplode->setParameter("color filter strength", 0.5);
 
 	matrixText = make_shared<LightEffectMatrixText>();
-	matrixText->setParameter("text", "Merry Christmas!"s);
+	matrixText->setParameter("text", "Hello, World!"s);
 	matrixText->setParameter("color", Color(0, 64, 0));
 	matrixText->setParameter("speed", 15.);
 
@@ -89,7 +89,7 @@ int main() {
 				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
 			}
 			else {
-				matrixExplode->addLight(light);
+				stripSmoothEQ->addLight(light);
 				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
 			}
 
@@ -145,6 +145,7 @@ int main() {
 	rhopalia.addEffect(matrixExplode);
 	rhopalia.addEffect(matrixCircSpec);
 	rhopalia.addEffect(matrixCircEQ);
+	rhopalia.addEffect(matrixText);
 	rhopalia.addEffect(fade);
 
 	audioDevice->startStream();
