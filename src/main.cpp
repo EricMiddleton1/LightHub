@@ -34,7 +34,7 @@ int main() {
 	soundSolid->setParameter("color filter strength", 0.5);
 
 	stripEQ = make_shared<LightEffectStripEQ>(spectrumAnalyzer);
-	stripEQ->setParameter("multiplier", 3.);
+	stripEQ->setParameter("multiplier", 2.);
 	
 	stripSmoothEQ = make_shared<LightEffectStripEQ>(spectrumAnalyzer);
 	stripSmoothEQ->setParameter("reverse", true);
@@ -88,8 +88,12 @@ int main() {
 				matrixExplode->addLight(light);
 				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
 			}
+			else if(light->getName() == "Lamp") {
+				matrixExplode->addLight(light);
+				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
+			}
 			else {
-				stripSmoothEQ->addLight(light);
+				matrixExplode->addLight(light);
 				std::cout << "\tMatrix added to effect 'Matrix Explode'\n" << std::endl;
 			}
 
